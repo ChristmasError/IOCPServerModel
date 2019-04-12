@@ -1,15 +1,10 @@
-#include"WinSocket.h"
-#include"XHttpResponse.h"
+#include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
+#include<WinSock2.h>
 #include<thread>
 #include<iostream>
-#include <WinSock2.h>
-#include <vector>
-#include<queue>
-#include<cstdlib>
-
+#include"XHttpResponse.h"
 using namespace std;
 
-#pragma comment(lib, "Ws2_32.lib")		// Socket编程需用的动态链接库
 #pragma comment(lib, "Kernel32.lib")	// IOCP需要用到的动态链接库
 
 #define READ 3
@@ -119,7 +114,6 @@ int main(int argc, char* argv[])
 		PerIoData->DataBuf.buf = PerIoData->buffer;
 		PerIoData->rmMode = READ;	// read
 		WSARecv(PerSocketData->socket.socket, &(PerIoData->DataBuf), 1, &RecvBytes, &Flags, &(PerIoData->Overlapped), NULL);
-		PerSocketData->socket.Close();
 	}
 	serverSock.Close();
 	acceptSock.Close();

@@ -1,4 +1,4 @@
 ﻿  main.cpp
-c:\users\chris\desktop\httpserver\src\httpserver_iocp\httpserver_iocp\main.cpp(134): warning C4101: “IpOverlapped”: 未引用的局部变量
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\main.cpp(128): warning C4101: “IpOverlapped”: 未引用的局部变量
 LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/FORCE”规范)
-  HTTPServer_IOCP.vcxproj -> C:\Users\Chris\Desktop\HTTPServer\src\HTTPServer_IOCP\HTTPServer_IOCP\..\..\..\bin\HTTPServer_IOCP.exe
+  HTTPServer_IOCP.vcxproj -> D:\Github local repository\IOCP-HTTPServer\src\HTTPServer_IOCP\HTTPServer_IOCP\..\..\..\bin\HTTPServer_IOCP.exe

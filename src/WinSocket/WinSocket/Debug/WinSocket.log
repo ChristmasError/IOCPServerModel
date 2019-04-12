@@ -1,6 +1,11 @@
-﻿  WinSocket.cpp
-c:\users\chris\desktop\httpserver\src\winsocket\winsocket\winsocket.cpp(54): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+﻿  stdafx.cpp
+  dllmain.cpp
+  socket.cpp
+  WinSocket.cpp
+d:\github local repository\iocp-httpserver\src\winsocket\winsocket\winsocket.cpp(54): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   d:\windows kits\10\include\10.0.17134.0\ucrt\string.h(133): note: 参见“strcpy”的声明
-c:\users\chris\desktop\httpserver\src\winsocket\winsocket\winsocket.cpp(110): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\github local repository\iocp-httpserver\src\winsocket\winsocket\winsocket.cpp(110): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   d:\windows kits\10\include\10.0.17134.0\ucrt\string.h(182): note: 参见“strerror”的声明
-  WinSocket.vcxproj -> C:\Users\Chris\Desktop\HTTPServer\src\WinSocket\WinSocket\..\..\..\lib\WINSOCKET.dll
+  正在生成代码...
+    正在创建库 ..\..\..\lib\WINSOCKET.lib 和对象 ..\..\..\lib\WINSOCKET.exp
+  WinSocket.vcxproj -> D:\Github local repository\IOCP-HTTPServer\src\WinSocket\WinSocket\..\..\..\lib\WINSOCKET.dll
