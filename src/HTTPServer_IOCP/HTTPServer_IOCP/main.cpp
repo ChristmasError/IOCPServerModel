@@ -14,7 +14,7 @@ using namespace std;
 
 #define READ 3
 #define WRITE 5
-#define test 111
+
 typedef struct {
 	WinSocket socket;//客户端socket
 					 //SOCKADDR_STORAGE ClientAddr;//客户端地址
