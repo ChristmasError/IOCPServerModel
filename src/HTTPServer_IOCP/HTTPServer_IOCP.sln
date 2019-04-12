@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HTTPServer_IOCP", "HTTPServer_IOCP\HTTPServer_IOCP.vcxproj", "{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8} = {D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinSocket", "..\WinSocket\WinSocket\WinSocket.vcxproj", "{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Debug|x64.ActiveCfg = Debug|x64
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Debug|x64.Build.0 = Debug|x64
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Debug|x86.ActiveCfg = Debug|Win32
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Debug|x86.Build.0 = Debug|Win32
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Release|x64.ActiveCfg = Release|x64
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Release|x64.Build.0 = Release|x64
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Release|x86.ActiveCfg = Release|Win32
+		{F5EC7725-5CD2-46AA-AF37-E85C19EBFC14}.Release|x86.Build.0 = Release|Win32
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Debug|x64.ActiveCfg = Debug|x64
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Debug|x64.Build.0 = Debug|x64
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Debug|x86.ActiveCfg = Debug|Win32
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Debug|x86.Build.0 = Debug|Win32
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Release|x64.ActiveCfg = Release|x64
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Release|x64.Build.0 = Release|x64
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Release|x86.ActiveCfg = Release|Win32
+		{D55B58CC-99B1-4858-A92F-05CE5CBAD1C8}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C0D560D-11B6-4DC7-823A-C4746C5192F3}
+	EndGlobalSection
+EndGlobal
