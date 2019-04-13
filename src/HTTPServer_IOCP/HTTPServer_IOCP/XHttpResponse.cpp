@@ -14,8 +14,7 @@ bool XHttpResponse::SetRequest(string request)
 	regex_search(src, mas, r);
 	if (mas.size() == 0)
 	{
-		//cout << "!!!!!!!!!!error src!!!!!!!!!!\n" << src << endl<<"!!!!!!!!!!error src!!!!!!!!!!\n";
-		printf("%s failed!\n", pattern.c_str());
+		cerr<<pattern<<" failed!"<<endl;
 		return false;
 	}
 	string type = mas[1];
@@ -33,7 +32,7 @@ bool XHttpResponse::SetRequest(string request)
 		query.c_str());
 
 	if (type != "GET") {
-		printf("Not Get!!!!!\n");
+		cerr<<"Not Get!!!!!"<<endl;
 		return false;
 	}
 	string filename = path;
@@ -113,7 +112,7 @@ string  XHttpResponse::GetHead()
 }
 int  XHttpResponse::Read(char *buf, int bufsize)
 {
-	//发送正文
+	//将请求的文件存入buf
 	return fread(buf, 1,bufsize, fp);
 }
 

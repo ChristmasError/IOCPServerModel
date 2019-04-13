@@ -17,7 +17,6 @@
 //
 //typedef struct {
 //	WinSocket socket;//客户端socket
-//					 //SOCKADDR_STORAGE ClientAddr;//客户端地址
 //}PER_HANDLE_DATA;
 //
 ////重叠IO用的结构体，临时记录IO数据

@@ -2,6 +2,7 @@
 #include<WinSock2.h>
 #include<thread>
 #include<iostream>
+#include<stdio.h>
 #include"XHttpResponse.h"
 using namespace std;
 
@@ -9,31 +10,33 @@ using namespace std;
 
 #define READ 3
 #define WRITE 5
+#define DATABUF_SIZE 1024
+#define WORK_THREADS_EXIT_CODE NULL
+HANDLE WorkThreadShutdownEvent = NULL;
 
 typedef struct {
-	WinSocket socket;//客户端socket
-					 //SOCKADDR_STORAGE ClientAddr;//客户端地址
+	WinSocket socket;//客户端socket信息		 
 }PER_HANDLE_DATA,*LPPER_HANDLE_DATA;
 
 //重叠IO用的结构体，临时记录IO数据
 typedef struct {
 	WSAOVERLAPPED Overlapped;   //OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
-								//以下可自定义扩展
 	WSABUF DataBuf;				//WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
-	char buffer[10240];			//消息数据
+	char buffer[DATABUF_SIZE];			//消息数据
 	DWORD rmMode;		//标志位READ OR WRITE
 }PER_IO_DATA,*LPPER_IO_DATA;
 
-//vector < PER_IO_SOCKET* > clientGroup;		// 记录客户端的向量组
-
-HANDLE hMutex = CreateMutex(NULL, FALSE, NULL);
+typedef struct{
+	HANDLE completionPort;
+	HANDLE workThreadsQuitEvent;
+}IOCP_DATA;
 
 DWORD WINAPI ServerWorkThread(LPVOID completionPort);
-//DWORD WINAPI ServerSendThread(LPVOID IpParam);
 
 int main(int argc, char* argv[])
 {
-	HANDLE completionPort;
+	//HANDLE completionPort;
+	IOCP_DATA IOCP;
 	SYSTEM_INFO mySysInfo;	// 确定处理器的核心数量	
 	WinSocket serverSock;	// 建立服务器流式套接字
 	WinSocket acceptSock; //listen接收的套接字
@@ -41,8 +44,9 @@ int main(int argc, char* argv[])
 
 	DWORD RecvBytes, Flags = 0;
 
-	completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-	if (completionPort == NULL)
+	IOCP.completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	IOCP.workThreadsQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (IOCP.completionPort == NULL)
 		cout << "创建完成端口失败!\n";
 
 	// 创建IO线程--线程里面创建线程池
@@ -50,7 +54,7 @@ int main(int argc, char* argv[])
 	GetSystemInfo(&mySysInfo);
 	for (DWORD i = 0; i < (mySysInfo.dwNumberOfProcessors * 2); ++i) {
 		// 创建服务器工作器线程，并将完成端口传递到该线程
-		HANDLE WORKThread = CreateThread(NULL, 0, ServerWorkThread, completionPort, 0, NULL);
+		HANDLE WORKThread = CreateThread(NULL, 0, ServerWorkThread, (LPVOID)&IOCP, 0, NULL);
 		if (NULL == WORKThread) {
 			cerr << "创建线程句柄失败！Error:" << GetLastError() << endl;
 			system("pause");
@@ -85,6 +89,7 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
+		//break;//测试关闭工作线程
 		// 接收连接，并分配完成端，这儿可以用AcceptEx()
 		acceptSock = serverSock.Accept();
 		acceptSock.SetBlock(false);
@@ -103,7 +108,7 @@ int main(int argc, char* argv[])
 		PerSocketData = new PER_HANDLE_DATA();
 		PerSocketData->socket = acceptSock;
 
-		CreateIoCompletionPort((HANDLE)(PerSocketData->socket.socket), completionPort, (DWORD)PerSocketData, 0);
+		CreateIoCompletionPort((HANDLE)(PerSocketData->socket.socket), IOCP.completionPort, (DWORD)PerSocketData, 0);
 
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
 		// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
@@ -115,15 +120,27 @@ int main(int argc, char* argv[])
 		PerIoData->rmMode = READ;	// read
 		WSARecv(PerSocketData->socket.socket, &(PerIoData->DataBuf), 1, &RecvBytes, &Flags, &(PerIoData->Overlapped), NULL);
 	}
+	if (serverSock.socket != INVALID_SOCKET)
+	{
+		WorkThreadShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		SetEvent(WorkThreadShutdownEvent);
+		for(int i=0;i<(mySysInfo.dwNumberOfProcessors * 2); ++i)
+		{
+			PostQueuedCompletionStatus(IOCP.completionPort, 0, (DWORD)WORK_THREADS_EXIT_CODE, NULL);
+		}
+		ResetEvent(WorkThreadShutdownEvent);
+	}
 	serverSock.Close();
 	acceptSock.Close();
 	WSACleanup();
+	while (1);
 	return 0;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 {
-	HANDLE CompletionPort = (HANDLE)IpParam;
+	//HANDLE CompletionPort = (HANDLE)IpParam;
+	IOCP_DATA* IOCP=(IOCP_DATA*)IpParam;
 	DWORD BytesTrans;
 	LPOVERLAPPED IpOverlapped;
 	LPPER_HANDLE_DATA handleInfo=NULL;
@@ -133,15 +150,16 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 	DWORD Flags = 0;
 	
 	XHttpResponse res;     //用于处理http请求
-	while (true)
+	while (WAIT_OBJECT_0!=WaitForSingleObject(IOCP->workThreadsQuitEvent , 0))
 	{
-		if (GetQueuedCompletionStatus(
-					CompletionPort,					//已完成IO信息的完成端口句柄
-					&BytesTrans,					//用于保存I/O过程中川水数据大小的变量地址
-					(PULONG_PTR)&(handleInfo),		//保存CreateIoCompletionPort()第三个参数的变量地址值
-					(LPOVERLAPPED*)&ioInfo,			//保存调用WSASend(),WSARecv()时传递的OVERLAPPED结构体地址的变量地址值
-					INFINITE)						//超时信息
-			== false)
+		//if (GetQueuedCompletionStatus(
+		//			CompletionPort,					//已完成IO信息的完成端口句柄
+		//			&BytesTrans,					//用于保存I/O过程中川水数据大小的变量地址
+		//			(PULONG_PTR)&(handleInfo),		//保存CreateIoCompletionPort()第三个参数的变量地址值
+		//			(LPOVERLAPPED*)&ioInfo,			//保存调用WSASend(),WSARecv()时传递的OVERLAPPED结构体地址的变量地址值
+		//			INFINITE)						//超时信息
+		//	== false)
+		if (GetQueuedCompletionStatus(IOCP->completionPort,&BytesTrans,(PULONG_PTR)&(handleInfo),(LPOVERLAPPED*)&ioInfo,INFINITE)== false)
 		{
 			cerr << "GetQueuedCompletionStatus Error: " << GetLastError() << endl;
 			handleInfo->socket.Close();
@@ -149,24 +167,36 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 			delete ioInfo;
 			continue;
 		}
-		if (0 == BytesTrans) {
+		//收到退出该标志，直接退出工作线程
+		if (handleInfo == WORK_THREADS_EXIT_CODE) {
+			break;
+		}
+			
+		//客户端调用closesocket正常退出
+		if (BytesTrans == 0) {
 			handleInfo->socket.Close();
-			//GlobalFree(handleInfo);//堆已损坏
-			//GlobalFree(ioInfo);
 			delete handleInfo;
 			delete ioInfo;
 			continue;
 		}
-		WaitForSingleObject(hMutex, INFINITE);
-		if (ioInfo->rmMode == WRITE)
+		//客户端直接退出，64错误,指定的网络名不可再用
+		if ((GetLastError() == WAIT_TIMEOUT) || (GetLastError() == ERROR_NETNAME_DELETED))
+		{
+			handleInfo->socket.Close();
+			delete handleInfo;
+			delete ioInfo;
 			continue;
-		if (ioInfo->rmMode == READ)
-		{ 	
+		}
+		switch (ioInfo->rmMode)
+		{
+		case WRITE:
+			break;
+			//case WRITE
+		case READ:
 			bool error = false;
 			bool sendfinish = false;
-			for(;;)
+			for (;;)
 			{
-				//cout << "ioInfo->DataBuf.buf:\n" << ioInfo->buffer << endl;
 				//以下处理GET请求
 				int buflend = strlen(ioInfo->buffer);
 
@@ -174,11 +204,10 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 					break;
 				}
 				if (!res.SetRequest(ioInfo->buffer)) {
-					cout << "SetRequest failed!\n";
+					cerr<<"SetRequest failed!"<<endl;
 					error = true;
 					break;
 				}
-				//cout << "after set request:\n" << ioInfo->buffer << endl;
 				string head = res.GetHead();
 				if (handleInfo->socket.Send(head.c_str(), head.size()) <= 0)
 				{
@@ -189,38 +218,37 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 					char buf[10240];
 					//将客户端请求的文件存入buf中并返回文件长度_len
 					int file_len = res.Read(buf, 10240);
+					if (file_len == 0)
+					{
+						sendfinish = true;
+						break;
+					}
 					if (file_len < 0)
 					{
 						error = true;
-						break;
-					}
-					else if (file_len == 0) {
-						sendfinish = true;
 						break;
 					}
 					if (handleInfo->socket.Send(buf, file_len) <= 0)
 					{
 						break;
 					}
-					//memset(&(ioInfo->Overlapped), 0, sizeof(OVERLAPPED));
-					//ioInfo->DataBuf.len = file_len;
-					//ioInfo->DataBuf.buf = buf;
-					//ioInfo->rmMode = WRITE;//WRITE
-					//WSASend(SENDINFO.handleInfo.socket.socket, &(SENDINFO.ioInfo.DataBuf), 1, NULL, 0, &(SENDINFO.ioInfo.Overlapped), NULL);
-				}
+				}//for(;;)
 				if (sendfinish)
+				{
 					break;
+				}
 				if (error)
 				{
-					cout << "something wrong ! client close !\n";
+					cerr << "send file happen wrong ! client close !"<<endl;
 					handleInfo->socket.Close();
+					delete handleInfo;
+					delete ioInfo;
 					break;
 				}
 			}
-
-		}//if READ
-
-		ReleaseMutex(hMutex);
+			break;
+			//case READ
+		}//switch
 
 		 // 为下一个重叠调用建立单I/O操作数据
 		ZeroMemory(&(ioInfo->Overlapped), sizeof(OVERLAPPED)); // 清空内存
@@ -235,7 +263,8 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 				&(ioInfo->Overlapped),			//overlaopped结构地址
 				NULL);							//没啥用
 	}//while
-
+	cout << "工作线程退出！" << endl;
+	return 0;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //DWORD WINAPI ServerSendThread(LPVOID IpParam)
