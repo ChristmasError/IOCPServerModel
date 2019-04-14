@@ -21,14 +21,23 @@
     <ClCompile Include="XHttpResponse.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IOCPModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XHttpResponse.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="IOCPModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="备份 4.10.cpp">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="备份  4.14.cpp">
       <Filter>源文件</Filter>
     </None>
   </ItemGroup>
