@@ -24,6 +24,9 @@
     <ClCompile Include="IOCPModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IOCP_main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XHttpResponse.h">

@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
 		PerIoData->rmMode = READ;	// read
 		WSARecv(PerSocketData->socket.socket, &(PerIoData->DataBuf), 1, &RecvBytes, &Flags, &(PerIoData->Overlapped), NULL);
 	}
+	// 关闭所有线程
 	if (serverSock.socket != INVALID_SOCKET)
 	{
 		WorkThreadShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);

@@ -9,10 +9,6 @@
 
 #pragma comment(lib, "Kernel32.lib")	// IOCP需要用到的动态链接库
 
-// 标志投递的是接收操作
-#define RECV_POSTED 3
-// 标志投递的是发送操作
-#define SEND_POSTED 5
 // DATABUF默认大小
 #define DATABUF_SIZE 1024
 // 传递给Worker线程的退出信号
@@ -41,28 +37,80 @@ inline void RELEASE_POINT(void* point)
 	}
 }
 
-
+//========================================================
+// 在完成端口上投递的I/O操作的类型
+//========================================================
+typedef enum _OPERATION_TYPE
+{
+	RECV_POSTED,		// 标志投递的是接收操作
+	SEND_POSTED,		// 标志投递的是发送操作
+	NULL_POSTED			// 初始化用
+} OPERATION_TYPE;
 
 //========================================================
 // 单IO数据结构体定义(用于每一个重叠操作的参数)
 //========================================================
-typedef struct
+typedef struct _PER_IO_DATA
 {
-	WSAOVERLAPPED Overlapped;			//OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
-	WSABUF DataBuf;						//WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
-	char buffer[DATABUF_SIZE];			//消息数据
-	DWORD rmMode;						//标志位READ or WRITE
+	WSAOVERLAPPED	m_Overlapped;					// OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
+	//SOCKET			socket;							// 这个IO操作使用的socket
+	WSABUF			m_wsaBuf;						// WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
+	char			m_buffer[DATABUF_SIZE];			// WSABUF具体字符缓冲区
+	OPERATION_TYPE  m_OpType;						// 标志位
+
+	//// 初始化
+	//_PER_IO_DATA()
+	//{
+	//	ZeroMemory(&(m_Overlapped), sizeof(WSAOVERLAPPED));
+	//	//socket = INVALID_SOCKET;
+	//	ZeroMemory(m_buffer, DATABUF_SIZE);
+	//	m_wsaBuf.buf = m_buffer;
+	//	m_wsaBuf.len = DATABUF_SIZE;
+	//	m_OpType = NULL_POSTED;
+	//}
+	//// 释放
+	//~_PER_IO_DATA()
+	//{
+	//	if (socket != INVALID_SOCKET)
+	//	{
+	//		closesocket(socket);
+	//		socket = INVALID_SOCKET;
+	//	}
+	//}
+
+	// 重置buf缓冲区
+	void ResetBuffer()
+	{
+		ZeroMemory(m_buffer, DATABUF_SIZE);
+	}
 } PER_IO_DATA, *LPPER_IO_DATA;
 
-
 //========================================================
-// 单IO数据结构体定义(用于每一个客户端的重叠操作的参数)
+// 单IO数据结构题定义(每一个客户端socket参数）
 //========================================================
-typedef struct 
+typedef struct  _PER_HANDLE_DATA
 {
-	WinSocket socket;					//客户端socket信息		 
-} PER_HANDLE_DATA, *LPPER_HANDLE_DATA;
+	WinSocket				m_Sock;		//每一个socket
+	//vector<PER_IO_DATA*>    m_vecIoContex;  //每个socket接收到的所有IO请求数组
 
+	//// 初始化
+	//_PER_HANDLE_DATA()
+	//{
+	//}
+	//// 释放资源
+	//~_PER_HANDLE_DATA()
+	//{
+	//	if (m_Sock.socket != INVALID_SOCKET)
+	//	{
+	//		m_Sock.Close();
+	//		m_Sock.socket = INVALID_SOCKET;
+	//	}
+	//	for (int i = 0; i < m_vecIoContex.size(); i++)
+	//	{
+	//		delete m_vecIoContex[i];
+	//	}
+	//}
+} PER_HANDLE_DATA,*LPPER_HANDLE_DATA;
 
 //========================================================
 //					IOCPModel类定义
@@ -70,17 +118,23 @@ typedef struct
 class IOCPModel
 {
 public:
-	IOCPModel(void);
-	~IOCPModel(void);
+	//IOCPModel()
+	//{
+	//	InitializeServer();
+	//}
+	//~IOCPModel()
+	//{
+	//	//this->Stop();
+	//}
 public:
-	// 初始化服务器
-	bool InitializeServer();
-
 	// 启动服务器
 	bool Start();
 
-	// 关闭IOCPserver
-	bool Stop();
+	// 关闭服务器
+	//bool Stop();
+
+	// 初始化服务器
+	bool InitializeServer();
 
 	// 加载Socket库
 	bool LoadSocketLib();
@@ -102,7 +156,7 @@ private:
 	void _Deinitialize();
 
 	// 投递WSARecv()请求
-	bool _PostRecv();
+	//bool _PostRecv();
 
 	// 线程函数，为IOCP请求服务工作者线程
 	static DWORD WINAPI _WorkerThread(LPVOID lpParam);
@@ -120,7 +174,7 @@ private:
 
 	HANDLE*						  m_WorkerThreadsHandleArray;	// 工作者线程句柄数组
 
-	unsigned int				  m_nThreads;				    // 工作线程数量
+	int							  m_nThreads;				    // 工作线程数量
 
 	WinSocket					  m_ServerSocket;				// 封装的socket类库
 
@@ -129,4 +183,3 @@ private:
 	LPPER_HANDLE_DATA		      m_pListenContext;				// 用于监听客户端Socket的context信息
 
 };
-
