@@ -1,39 +1,9 @@
 #include<IOCPModel.h>
+
 /////////////////////////////////////////////////////////////////
 // 启动服务器
 bool IOCPModel::Start()
 {
-	//LPPER_HANDLE_DATA PerHandleData;
-	//DWORD RecvBytes, Flags = 0;
-	//while (true)
-	//{
-	//	WinSocket acceptClient;
-	//	acceptClient= m_ServerSocket.Accept();
-	//	if (INVALID_SOCKET == acceptClient.socket) 
-	//	{
-	//		if (WSAGetLastError() == WSAEWOULDBLOCK)
-	//			continue;
-	//		else
-	//		{
-	//			cerr << "Accept Socket Error: " << GetLastError() << endl;
-	//			system("pause");
-	//			return false;
-	//		}
-	//	}
-	//	PerHandleData = new PER_HANDLE_DATA();
-	//	PerHandleData->m_Sock = acceptClient;
-	//	CreateIoCompletionPort((HANDLE)(PerHandleData->m_Sock.socket), m_IOCompletionPort, (DWORD)PerHandleData, 0);
-	//	// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
-	//	// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
-	//	// 单I/O操作数据(I/O重叠)
-	//	PER_IO_DATA *PerIoData=new PER_IO_DATA;
-	//	ZeroMemory(&(PerIoData->m_Overlapped), sizeof(WSAOVERLAPPED));
-	//	PerIoData->m_wsaBuf.len = DATABUF_SIZE;
-	//	PerIoData->m_wsaBuf.buf = PerIoData->m_buffer;
-	//	PerIoData->m_OpType = RECV_POSTED;
-	//	WSARecv(PerHandleData->m_Sock.socket, &(PerIoData->m_wsaBuf), 1, &RecvBytes, &Flags, &(PerIoData->m_Overlapped), NULL);
-	//}
-
 	SYSTEM_INFO mySysInfo;	// 确定处理器的核心数量	
 	WinSocket serverSock;	// 建立服务器流式套接字
 	WinSocket acceptSock; //listen接收的套接字
@@ -41,8 +11,8 @@ bool IOCPModel::Start()
 
 	DWORD RecvBytes, Flags = 0;
 
-	m_IOCompletionPort  = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-	m_WorkThreadShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_IOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	//m_WorkThreadShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (m_IOCompletionPort == NULL)
 		cout << "创建完成端口失败!\n";
 
@@ -51,7 +21,7 @@ bool IOCPModel::Start()
 	GetSystemInfo(&mySysInfo);
 	for (DWORD i = 0; i < (mySysInfo.dwNumberOfProcessors * 2); ++i) {
 		// 创建服务器工作器线程，并将完成端口传递到该线程
-		HANDLE WORKThread = CreateThread(NULL, 0, _WorkerThread, (LPVOID)&m_IOCompletionPort, 0, NULL);
+		HANDLE WORKThread = CreateThread(NULL, 0, _WorkerThread, (void*)this, 0, NULL);
 		if (NULL == WORKThread) {
 			cerr << "创建线程句柄失败！Error:" << GetLastError() << endl;
 			system("pause");
@@ -94,23 +64,23 @@ bool IOCPModel::Start()
 		PerSocketData = new PER_HANDLE_DATA();
 		PerSocketData->m_Sock = acceptSock;
 
-		CreateIoCompletionPort((HANDLE)(PerSocketData->m_Sock.socket),m_IOCompletionPort, (DWORD)PerSocketData, 0);
+		CreateIoCompletionPort((HANDLE)(PerSocketData->m_Sock.socket), m_IOCompletionPort, (DWORD)PerSocketData, 0);
 
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
 		// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
 		// 单I/O操作数据(I/O重叠)
 		PER_IO_DATA* PerIoData = new PER_IO_DATA();
 		ZeroMemory(&(PerIoData->m_Overlapped), sizeof(WSAOVERLAPPED));
-		PerIoData->m_wsaBuf.len = 1024;
+		PerIoData->m_wsaBuf.len = DATABUF_SIZE;
 		PerIoData->m_wsaBuf.buf = PerIoData->m_buffer;
-		PerIoData->m_OpType = RECV_POSTED;	// read
-		int nBytesRecv = WSARecv(PerSocketData->m_Sock.socket, &(PerIoData->m_wsaBuf), 1, &RecvBytes, &Flags, &(PerIoData->m_Overlapped), NULL);
-		if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
-		{
-			cout << "如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了\n";
-			return false;
-		}
-
+		PerIoData->rmMode = READ;	// read
+		WSARecv(PerSocketData->m_Sock.socket, &(PerIoData->m_wsaBuf), 1, &RecvBytes, &Flags, &(PerIoData->m_Overlapped), NULL);
+		//int nBytesRecv = WSARecv(PerSocketData->m_Sock.socket, &(PerIoData->m_wsaBuf), 1, &RecvBytes, &Flags, &(PerIoData->m_Overlapped), NULL);
+		//if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
+		//{
+		//	cout << "如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了\n";
+		//	return false;
+		//}
 	}
 
 	return true;
@@ -242,11 +212,9 @@ void IOCPModel::_Deinitialize()
 
 /////////////////////////////////////////////////////////////////
 // 工作线程函数
- DWORD IOCPModel::_WorkerThread(LPVOID lpParam)
+ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 {
 	 IOCPModel* IOCP = (IOCPModel*)lpParam;
-
-	 OVERLAPPED * IOoverlapped=NULL;
 	 LPPER_HANDLE_DATA handleInfo = NULL;
 	 LPPER_IO_DATA ioInfo = NULL;
 	 //用于WSARecv()
@@ -254,18 +222,10 @@ void IOCPModel::_Deinitialize()
 	 DWORD Flags = 0;
 
 	 XHttpResponse res;     //用于处理http请求
-	 while (true/*WAIT_OBJECT_0 != WaitForSingleObject(m_WorkThreadShutdownEvent, 0)*/)
+	 while (true)
 	 {
-		 //if (GetQueuedCompletionStatus(
-		 //			CompletionPort,					//已完成IO信息的完成端口句柄
-		 //			&BytesTrans,					//用于保存I/O过程中川水数据大小的变量地址
-		 //			(PULONG_PTR)&(handleInfo),		//保存CreateIoCompletionPort()第三个参数的变量地址值
-		 //			(LPOVERLAPPED*)&ioInfo,			//保存调用WSASend(),WSARecv()时传递的OVERLAPPED结构体地址的变量地址值
-		 //			INFINITE)						//超时信息
-		 //	== false)
-		 bool bRet = GetQueuedCompletionStatus(IOCP->m_IOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo), &IOoverlapped, INFINITE);
-		 ioInfo = CONTAINING_RECORD(IOoverlapped, PER_IO_DATA, m_Overlapped);
-		 while (1);
+
+		 bool bRet = GetQueuedCompletionStatus(IOCP->m_IOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo),(LPOVERLAPPED*)&ioInfo, INFINITE);
 		 if (bRet==false)
 		 {
 			 cerr << "GetQueuedCompletionStatus Error: " << GetLastError() << endl;
@@ -275,9 +235,9 @@ void IOCPModel::_Deinitialize()
 			 continue;
 		 }
 		 //收到退出该标志，直接退出工作线程
-		 if (ioInfo->m_OpType==NULL_POSTED) {
-			 break;
-		 }
+		 //if (ioInfo->m_OpType==NULL_POSTED) {
+			// break;
+		 //}
 
 		 //客户端调用closesocket正常退出
 		 if (RecvBytes == 0) {
@@ -294,12 +254,12 @@ void IOCPModel::_Deinitialize()
 			 delete ioInfo;
 			 continue;
 		 }
-		 switch (ioInfo->m_OpType)
+		 switch (ioInfo->rmMode)
 		 {
-		 case SEND_POSTED:
+		 case WRITE:
 			 break;
 			 //case WRITE
-		 case RECV_POSTED:
+		 case READ:
 			 bool error = false;
 			 bool sendfinish = false;
 			 for (;;)

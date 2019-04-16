@@ -35,8 +35,8 @@ DWORD WINAPI ServerWorkThread(LPVOID completionPort);
 
 int main(int argc, char* argv[])
 {
-	//HANDLE completionPort;
-	IOCP_DATA IOCP;
+	HANDLE completionPort;
+	//IOCP_DATA IOCP;
 	SYSTEM_INFO mySysInfo;	// 确定处理器的核心数量	
 	WinSocket serverSock;	// 建立服务器流式套接字
 	WinSocket acceptSock; //listen接收的套接字
@@ -44,9 +44,9 @@ int main(int argc, char* argv[])
 
 	DWORD RecvBytes, Flags = 0;
 
-	IOCP.completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-	IOCP.workThreadsQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if (IOCP.completionPort == NULL)
+	completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	//IOCP.workThreadsQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (completionPort == NULL)
 		cout << "创建完成端口失败!\n";
 
 	// 创建IO线程--线程里面创建线程池
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	GetSystemInfo(&mySysInfo);
 	for (DWORD i = 0; i < (mySysInfo.dwNumberOfProcessors * 2); ++i) {
 		// 创建服务器工作器线程，并将完成端口传递到该线程
-		HANDLE WORKThread = CreateThread(NULL, 0, ServerWorkThread, (LPVOID)&IOCP, 0, NULL);
+		HANDLE WORKThread = CreateThread(NULL, 0, ServerWorkThread, (LPVOID)&completionPort, 0, NULL);
 		if (NULL == WORKThread) {
 			cerr << "创建线程句柄失败！Error:" << GetLastError() << endl;
 			system("pause");
@@ -62,20 +62,11 @@ int main(int argc, char* argv[])
 		}
 		CloseHandle(WORKThread);
 	}
-	//for (DWORD i = 0; i <(mySysInfo.dwNumberOfProcessors ); ++i) {
-	//	HANDLE SENDThread = CreateThread(NULL, 0, ServerSendThread, 0, 0, NULL);
-	//	if (NULL == SENDThread) {
-	//		cerr << "创建发送句柄失败！Error:" << GetLastError() << endl;
-	//		system("pause");
-	//		return -1;
-	//	}
-	//	CloseHandle(SENDThread);
-	//}
 
 	serverSock.CreateSocket();
 	unsigned port = 8888;
-	if (argc > 1)
-		port = atoi(argv[1]);
+	//if (argc > 1)
+	//	port = atoi(argv[1]);
 	serverSock.Bind(port);
 
 	int listenResult = listen(serverSock.socket, 5);
@@ -108,7 +99,7 @@ int main(int argc, char* argv[])
 		PerSocketData = new PER_HANDLE_DATA();
 		PerSocketData->socket = acceptSock;
 
-		CreateIoCompletionPort((HANDLE)(PerSocketData->socket.socket), IOCP.completionPort, (DWORD)PerSocketData, 0);
+		CreateIoCompletionPort((HANDLE)(PerSocketData->socket.socket), completionPort, (DWORD)PerSocketData, 0);
 
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
 		// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
@@ -127,7 +118,7 @@ int main(int argc, char* argv[])
 		SetEvent(WorkThreadShutdownEvent);
 		for(int i=0;i<(mySysInfo.dwNumberOfProcessors * 2); ++i)
 		{
-			PostQueuedCompletionStatus(IOCP.completionPort, 0, (DWORD)WORK_THREADS_EXIT_CODE, NULL);
+			PostQueuedCompletionStatus(completionPort, 0, (DWORD)WORK_THREADS_EXIT_CODE, NULL);
 		}
 		ResetEvent(WorkThreadShutdownEvent);
 	}
@@ -143,7 +134,6 @@ DWORD WINAPI ServerWorkThread(LPVOID IpParam)
 	//HANDLE CompletionPort = (HANDLE)IpParam;
 	IOCP_DATA* IOCP=(IOCP_DATA*)IpParam;
 	DWORD BytesTrans;
-	LPOVERLAPPED IpOverlapped;
 	LPPER_HANDLE_DATA handleInfo=NULL;
 	LPPER_IO_DATA ioInfo = NULL;
 	//用于WSARecv()

@@ -47,6 +47,8 @@ typedef enum _OPERATION_TYPE
 	NULL_POSTED			// 初始化用
 } OPERATION_TYPE;
 
+#define READ 3
+#define WRITE 5
 //========================================================
 // 单IO数据结构体定义(用于每一个重叠操作的参数)
 //========================================================
@@ -56,7 +58,8 @@ typedef struct _PER_IO_DATA
 	//SOCKET			socket;							// 这个IO操作使用的socket
 	WSABUF			m_wsaBuf;						// WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
 	char			m_buffer[DATABUF_SIZE];			// WSABUF具体字符缓冲区
-	OPERATION_TYPE  m_OpType;						// 标志位
+	DWORD rmMode;
+	//OPERATION_TYPE  m_OpType;						// 标志位
 
 	//// 初始化
 	//_PER_IO_DATA()
