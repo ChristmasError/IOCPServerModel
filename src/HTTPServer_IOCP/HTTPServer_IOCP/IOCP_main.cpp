@@ -5,6 +5,5 @@ int main()
 {
 	IOCPModel IOCPserver;
 	IOCPserver.Start();
-	while (1);
 	return 0;
 }

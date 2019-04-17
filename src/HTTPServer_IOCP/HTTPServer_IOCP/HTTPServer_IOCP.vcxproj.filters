@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="XHttpResponse.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -25,6 +22,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="IOCP_main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="备份 4.17.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
