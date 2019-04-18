@@ -164,8 +164,8 @@ private:
 	// 投递WSARecv()请求
 	bool _PostRecv();
 
-	// 投递WSARecv()请求
-	//bool _PostRecv();
+	// 投递WSASend()请求
+	bool _PostSend();
 
 	// 打印消息
 	void _ShowMessage(const char*, ...) const;
