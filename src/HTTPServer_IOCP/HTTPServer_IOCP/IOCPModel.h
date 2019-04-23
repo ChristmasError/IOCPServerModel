@@ -191,7 +191,7 @@ public:
 	{
 	}
 
-	// 获取一个新的IOContext
+	// 获取一个新的IO_DATA
 	PER_IO_DATA *GetNewIOContext()
 	{
 		PER_IO_DATA *context = ioContextPool.AllocateIoContext();
@@ -231,6 +231,7 @@ public:
 	// 服务器内资源初始化
 	IOCPModel()
 	{
+		m_ListenSockInfo = NULL;
 		useAcceptEx = false;
 		m_WorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	}
@@ -312,6 +313,7 @@ protected:
 	HANDLE						  m_IOCompletionPort;			// 完成端口句柄
 
 	// AcceptEX()
+
 	PER_HANDLE_DATA               *m_ListenSockInfo;			// 用于监听Context
 	LPFN_ACCEPTEX				  fnAcceptEx;					// AcceptEx函数指针
 	LPFN_GETACCEPTEXSOCKADDRS	  fnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针

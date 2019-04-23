@@ -1,33 +1,44 @@
 #include<IOCPModel.h>
 #include <mstcpip.h>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 
-
+#pragma warning(disable : 4996) 
 IOContextPool _PER_HANDLE_DATA::ioContextPool;		// 初始化
 
 /////////////////////////////////////////////////////////////////
 // 启动服务器
 bool IOCPModel::StartEX()
 {
+	if (_ServerRunning) {
+		_ShowMessage("服务器运行中,请勿重复运行！\n");
+		return false;
+	}
 	useAcceptEx = true;
 	InitializeIOCPResource(useAcceptEx);
 
+	_ServerRunning = true;
+	this->_ShowMessage("本服务器已准备就绪，正在等待客户端的接入......\n");
+
+	while (_ServerRunning)
+	{
+		Sleep(1000);
+	}
 	return true;
 }
 bool IOCPModel::Start()
 {
-	useAcceptEx = false;
-	InitializeIOCPResource(useAcceptEx);
-
 	// 服务器运行状态检测
-	if (_ServerRunning == RUNNING) {
+	if (_ServerRunning) {
 		_ShowMessage("服务器运行中,请勿重复运行！\n");
 		return false;
 	}
-	else 
-	{
-		_ServerRunning = RUNNING;
-		this->_ShowMessage("本服务器已准备就绪，正在等待客户端的接入......\n");
-	}
+
+	useAcceptEx = false;
+	InitializeIOCPResource(useAcceptEx);
+
+
+	_ServerRunning = RUNNING;
+	this->_ShowMessage("本服务器已准备就绪，正在等待客户端的接入......\n");
+	
 
 	WinSocket acceptSock; //listen接收的套接字
 	LPPER_HANDLE_DATA handleInfo;
@@ -36,7 +47,6 @@ bool IOCPModel::Start()
 
 	while (true)
 	{
-		// 接收连接，并分配完成端，这儿可以用AcceptEx()
 		acceptSock = m_ServerSocket.Accept();
 		acceptSock.SetBlock(false);
 		if (INVALID_SOCKET == acceptSock.socket)
@@ -74,7 +84,7 @@ bool IOCPModel::Start()
 DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 {
 	IOCPModel* IOCP = (IOCPModel*)lpParam;
-
+;
 	LPPER_HANDLE_DATA handleInfo = NULL;
 	LPPER_IO_DATA ioInfo = NULL;
 	DWORD RecvBytes;
@@ -84,12 +94,14 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 	{
 		bool bRet = GetQueuedCompletionStatus(IOCP->m_IOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);
 		//收到退出线程标志，直接退出工作线程
+
 		if (EXIT_CODE == (DWORD)handleInfo)
 		{
 			break;
 		}
 		// NULL_POSTED 操作未初始化
 		if (ioInfo->m_OpType == NULL_POSTED) {
+			
 			continue;
 		}
 
@@ -125,7 +137,6 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 				//回收socket
 			}
 		}
-		// GetQueuedCompletionStatus()无错误返回
 		else
 		{
 			// 判断是否有客户端断开
@@ -183,7 +194,8 @@ bool IOCPModel::InitializeIOCPResource(bool useAcceptEX)
 	{
 		this->_ShowMessage("初始化IOCP完毕！\n");
 	}
-	// 初始化服务器socket,判断是否使用AcceptEX().
+		
+	// 初始化服务器socket,判断是否使用AcceptEX()
 	if (useAcceptEX==false)
 	{
 		if (false == _InitializeServerSocket())
@@ -197,7 +209,8 @@ bool IOCPModel::InitializeIOCPResource(bool useAcceptEX)
 			this->_ShowMessage("初始化服务器Socket完毕！\n");
 		}
 	}
-	else
+	// 使用AcceptEX()
+	if (useAcceptEX == true)
 	{
 		if (false == _InitializeListenSocket())
 		{
@@ -273,12 +286,10 @@ bool IOCPModel::_InitializeIOCP()
 // 初始化服务器Socket
 bool IOCPModel::_InitializeListenSocket()
 {
-	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
-	GUID guidAcceptEx = WSAID_ACCEPTEX;
-	GUID guidGetAcceptSockAddrs = WSAID_GETACCEPTEXSOCKADDRS;
 	// 创建用于监听的 Listen Socket Context
+
 	m_ListenSockInfo = new PER_HANDLE_DATA;
-	//m_ListenSockInfo->m_Sock.socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	m_ListenSockInfo->m_Sock.socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if(INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
 	{ 
 		this->_ShowMessage("创建监听socket context失败!\n");
@@ -288,74 +299,147 @@ bool IOCPModel::_InitializeListenSocket()
 	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_IOCompletionPort, (DWORD)m_ListenSockInfo, 0))
 	{
 		//RELEASE_SOCKET(m_ListenSockInfo->m_Sock.socket)
+		this->_ShowMessage("Listen socket与完成端口绑定失败!\n");
 		return false;
 	}
 	// 绑定地址&端口	
 	m_ListenSockInfo->m_Sock.port = DEFAULT_PORT;
 	m_ListenSockInfo->m_Sock.Bind(m_ListenSockInfo->m_Sock.port);
-	//////////////////绑定端口//////////////////////////////////////////////////////////////////////////////////
-	//if (m_ListenSockInfo->m_Sock.socket <= 0)
-	//	m_ListenSockInfo->m_Sock.CreateSocket();
-	//sockaddr_in saddr;
-	//saddr.sin_family = AF_INET;
-	//saddr.sin_port = htons(DEFAULT_PORT);
-	//saddr.sin_addr.s_addr = htonl(0);
-	//if (::bind(m_ListenSockInfo->m_Sock.socket, (sockaddr*)&saddr, sizeof(saddr)) != 0)
-	//{
-	//	printf("绑定 %d 端口失败!\n", DEFAULT_PORT);
-	//	return false;
-	//}
-	//printf("绑定 %d 端口成功!\n", DEFAULT_PORT);
-	////m_ListenSockInfo->m_Sock.Bind(DEFAULT_PORT);
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
 	// 开始监听
 	if (SOCKET_ERROR == listen(m_ListenSockInfo->m_Sock.socket, 5)) {
 		cerr << "监听失败. Error: " << GetLastError() << endl;
 		return false;
 	}
 
-	// 提取扩展函数指针
+
+	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
+	GUID guidAcceptEx = WSAID_ACCEPTEX;
+	GUID guidGetAcceptSockAddrs = WSAID_GETACCEPTEXSOCKADDRS;
 	DWORD dwBytes = 0;
-	if (SOCKET_ERROR == WSAIoctl(
-		m_ListenSockInfo->m_Sock.socket,
-		SIO_GET_EXTENSION_FUNCTION_POINTER,
-		&guidAcceptEx,
-		sizeof(guidAcceptEx),
-		&fnAcceptEx,
-		sizeof(fnAcceptEx),
-		&dwBytes,
-		NULL,
-		NULL))
-	{
-		_Deinitialize();
-		return false;
+	if (WSAIoctl(m_ListenSockInfo->m_Sock.socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+		&guidAcceptEx, sizeof(guidAcceptEx), &fnAcceptEx, sizeof(fnAcceptEx),
+		&dwBytes, NULL, NULL) == 0)
+		cout << "WSAIoctl success..." << endl;
+	else {
+		cout << "WSAIoctl failed..." << endl;
+		switch (WSAGetLastError())
+		{
+		case WSAENETDOWN:
+			cout << "" << endl;
+			break;
+		case WSAEFAULT:
+			cout << "WSAEFAULT" << endl;
+			break;
+		case WSAEINVAL:
+			cout << "WSAEINVAL" << endl;
+			break;
+		case WSAEINPROGRESS:
+			cout << "WSAEINPROGRESS" << endl;
+			break;
+		case WSAENOTSOCK:
+			cout << "WSAENOTSOCK" << endl;
+			break;
+		case WSAEOPNOTSUPP:
+			cout << "WSAEOPNOTSUPP" << endl;
+			break;
+		case WSA_IO_PENDING:
+			cout << "WSA_IO_PENDING" << endl;
+			break;
+		case WSAEWOULDBLOCK:
+			cout << "WSAEWOULDBLOCK" << endl;
+			break;
+		case WSAENOPROTOOPT:
+			cout << "WSAENOPROTOOPT" << endl;
+			break;
+		}
+		return true;
 	}
 
-	if (SOCKET_ERROR == WSAIoctl(
-		m_ListenSockInfo->m_Sock.socket, 
-		SIO_GET_EXTENSION_FUNCTION_POINTER,
-		&guidGetAcceptSockAddrs,
-		sizeof(guidGetAcceptSockAddrs),
+	GUID guidGetAcceptExSockaddrs = WSAID_GETACCEPTEXSOCKADDRS;
+	if (0 != WSAIoctl(m_ListenSockInfo->m_Sock.socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+		&guidGetAcceptExSockaddrs,
+		sizeof(guidGetAcceptExSockaddrs),
 		&fnGetAcceptExSockAddrs,
 		sizeof(fnGetAcceptExSockAddrs),
-		&dwBytes,
-		NULL,
-		NULL))
+		&dwBytes, NULL, NULL))
 	{
-		_Deinitialize();
-		return false;
+		//异常
 	}
 
-	for (size_t i = 0; i < MAX_POST_ACCEPT; i++)
+	for (int i = 0; i<5; i++)
 	{
-		PER_IO_DATA *ioContext = m_ListenSockInfo->GetNewIOContext();
-		if (false == _PostAccept(m_ListenSockInfo, ioContext))
+		DWORD dwBytes;
+
+		LPPER_IO_DATA  pIO = NULL;
+		pIO = new PER_IO_DATA;
+		pIO->m_OpType = ACCEPT_POSTED;
+
+		//先创建一个套接字(相比accept有点就在此,accept是接收到连接才创建出来套接字,浪费时间. 这里先准备一个,用于接收连接)
+		pIO->m_AcceptSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
+		//调用AcceptEx函数，地址长度需要在原有的上面加上16个字节
+		//向服务线程投递一个接收连接的的请求
+		BOOL rc = fnAcceptEx(m_ListenSockInfo->m_Sock.socket, pIO->m_AcceptSocket,
+			pIO->m_buffer, 0,
+			sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16,
+			&dwBytes, &(pIO->m_Overlapped));
+
+		if (FALSE == rc)
 		{
-			m_ListenSockInfo->RemoveIOContext(ioContext);
-			return false;
+			if (WSAGetLastError() != ERROR_IO_PENDING)
+			{
+				printf("%d", WSAGetLastError());
+				return false;
+			}
 		}
 	}
+
+
+	
+
+	//// 提取扩展函数指针
+	//DWORD dwBytes = 0;
+	//if (SOCKET_ERROR == WSAIoctl(
+	//	m_ListenSockInfo->m_Sock.socket,
+	//	SIO_GET_EXTENSION_FUNCTION_POINTER,
+	//	&guidAcceptEx,
+	//	sizeof(guidAcceptEx),
+	//	&fnAcceptEx,
+	//	sizeof(fnAcceptEx),
+	//	&dwBytes,
+	//	NULL,
+	//	NULL))
+	//{
+	//	this->_ShowMessage("提取扩展1函数指针失败!\n");
+	//	_Deinitialize();
+	//	return false;
+	//}
+	//if (SOCKET_ERROR == WSAIoctl(
+	//	m_ListenSockInfo->m_Sock.socket, 
+	//	SIO_GET_EXTENSION_FUNCTION_POINTER,
+	//	&guidGetAcceptSockAddrs,
+	//	sizeof(guidGetAcceptSockAddrs),
+	//	&fnGetAcceptExSockAddrs,
+	//	sizeof(fnGetAcceptExSockAddrs),
+	//	&dwBytes,
+	//	NULL,
+	//	NULL))
+	//{
+	//	this->_ShowMessage("提取扩展2函数指针失败!\n");
+	//	_Deinitialize();
+	//	return false;
+	//}
+	//for (size_t i = 0; i < MAX_POST_ACCEPT; i++)
+	//{
+	//	PER_IO_DATA *ioContext = m_ListenSockInfo->GetNewIOContext();
+	//	if (false == _PostAccept(m_ListenSockInfo, ioContext))
+	//	{
+	//		this->_ShowMessage("_PostAccept失败!\n");
+	//		m_ListenSockInfo->RemoveIOContext(ioContext);
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }
@@ -493,24 +577,47 @@ bool IOCPModel::_DoSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid)
 // 投递I/O请求
 bool IOCPModel::_PostAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 {
+
+	//在使用AcceptEx前需要事先重建一个套接字用于其第二个参数。这样目的是节省时间
+	//通常可以创建一个套接字库
+	ioInfo->m_AcceptSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
+
+	DWORD flags = 0;
 	DWORD dwBytes = 0;
-	ioInfo->m_OpType = ACCEPT_POSTED;
-	//ioInfo->ioSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	if (INVALID_SOCKET == ioInfo->m_AcceptSocket)
+	//调用AcceptEx函数，地址长度需要在原有的上面加上16个字节
+	//注意这里使用了重叠模型，该函数的完成将在与完成端口关联的工作线程中处理
+	cout << "Process AcceptEx function wait for client connect..." << endl;
+	int rc = fnAcceptEx(m_ListenSockInfo->m_Sock.socket, ioInfo->m_AcceptSocket,ioInfo->m_buffer,
+		0,
+		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &dwBytes,
+		&(ioInfo->m_Overlapped));
+	if (rc == FALSE)
 	{
+		if (WSAGetLastError() != ERROR_IO_PENDING)
+			cout << "lpfnAcceptEx failed.." << endl;
 		return false;
 	}
 
-	// 将接收缓冲置为0,令AcceptEx直接返回,防止拒绝服务攻击
-	if (false == fnAcceptEx(m_ListenSockInfo->m_Sock.socket, ioInfo->m_AcceptSocket, ioInfo->m_wsaBuf.buf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &ioInfo->m_Overlapped))
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			return false;
-		}
-	}
+	//DWORD dwBytes = 0;
+	//ioInfo->m_OpType = ACCEPT_POSTED;
+	////ioInfo->m_AcceptSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	//if (INVALID_SOCKET == ioInfo->m_AcceptSocket)
+	//{
+	//	this->_ShowMessage("_PostAccept() error: 1 !\n");
+	//	return false;
+	//}
 
-	//InterlockedIncrement(&acceptPostCnt);
+	//// 将接收缓冲置为0,令AcceptEx直接返回,防止拒绝服务攻击
+	//if (false == fnAcceptEx(m_ListenSockInfo->m_Sock.socket, ioInfo->m_AcceptSocket, ioInfo->m_wsaBuf.buf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &ioInfo->m_Overlapped))
+	//{
+	//	if (WSA_IO_PENDING != WSAGetLastError())
+	//	{
+	//		this->_ShowMessage("_PostAccept() error: 2 !\n");
+	//		return false;
+	//	}
+	//}
+
+	////InterlockedIncrement(&acceptPostCnt);
 	return true;
 }
 
