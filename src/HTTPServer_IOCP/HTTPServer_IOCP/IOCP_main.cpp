@@ -73,7 +73,6 @@ class HTTPServer :public IOCPModel
 int main()
 {
 	HTTPServer IOCPserver;
-	//IOCPserver.Start();
-	IOCPserver.StartEX();
+	IOCPserver.ServerStart(EX);
 	return 0;
 }

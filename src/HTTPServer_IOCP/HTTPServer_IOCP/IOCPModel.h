@@ -69,11 +69,10 @@ typedef enum _OPERATION_TYPE
 typedef struct _PER_IO_DATA
 {
 	WSAOVERLAPPED	m_Overlapped;					// OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
-	SOCKET			m_AcceptSocket;						// 此IO操作对应的socket
+	SOCKET			m_AcceptSocket;					// 此IO操作对应的socket
 	WSABUF			m_wsaBuf;						// WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
 	char			m_buffer[BUF_SIZE];			    // WSABUF具体字符缓冲区
-	OPERATION_TYPE           m_OpType;
-	//OPERATION_TYPE  m_OpType;						// 标志位
+	OPERATION_TYPE  m_OpType;						// 标志位
 
 	// 初始化
 	_PER_IO_DATA()
@@ -177,9 +176,9 @@ private:
 	vector<PER_IO_DATA*>	arrIoContext;		  // 同一个socket上的多个IO请求
 	static IOContextPool    ioContextPool;		  //空闲的IOcontext池子
 	//CRITICAL_SECTION		csLock;
-	//vector<PER_IO_DATA*>    m_vecIoContex;  //每个socket接收到的所有IO请求数组
+	//vector<PER_IO_DATA*>    m_vecIoContex;	  //每个socket接收到的所有IO请求数组
 public:
-	WinSocket				m_Sock;		      //每一个socket
+	WinSocket				m_Sock;		          //每一个socket的信息
 
 	// 初始化
 	_PER_HANDLE_DATA()
@@ -229,10 +228,20 @@ class IOCPModel
 {
 public:
 	// 服务器内资源初始化
-	IOCPModel()
+	IOCPModel():m_useAcceptEx(false),
+				m_ServerRunning(false),
+				m_IOCompletionPort(INVALID_HANDLE_VALUE),
+				m_workThread(NULL),
+				m_ListenSockInfo(NULL),
+				fnAcceptEx(NULL),
+				fnGetAcceptExSockAddrs(NULL),
+				m_nThreads(0)
 	{
-		m_ListenSockInfo = NULL;
-		useAcceptEx = false;
+		if (_LoadSocketLib() == true)
+			this->_ShowMessage("加载Winsock库成功！\n");
+		else
+			// 加载失败 抛出异常
+		// 创建工作线程退出事件
 		m_WorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	}
 	~IOCPModel()
@@ -241,16 +250,15 @@ public:
 	}
 public:
 	// 开启服务器
-	bool Start();
-	bool StartEX();
+	// 根据serveroption判断accept()/acceptEX()工作模式
+	bool ServerStart(bool serveroption = false);
+	
 	// 关闭服务器
 	//void Stop();
 
 	// 初始化服务器资源
 	// 1.初始化Winsock服务
 	// 2.初始化IOCP + 工作函数线程池
-	// 3.监听服务器套接字
-	// 4.accept()
 	bool InitializeIOCPResource(bool ex);
 
 	// 加载Winsock库:public
@@ -270,13 +278,17 @@ public:
 	//virtual void SendCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
 
 private:
+	// 开启服务器
+	bool _Start();
+	bool _StartEX();
+
 	// 加载Winsock库:private
 	bool _LoadSocketLib();
 
 	// 初始化IOCP:完成端口与工作线程线程池创建
 	bool _InitializeIOCP();
 
-	// 监听服务器套接字
+	// 根据服务器工作模式，建立监听服务器套接字
 	bool _InitializeServerSocket();
 	bool _InitializeListenSocket();
 
@@ -300,9 +312,9 @@ private:
 	bool _PostSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 
 protected:
-	bool						  useAcceptEx;					// 选择使用AcceptEX()创建
-
-	bool						  _ServerRunning;				// 服务器运行判断
+	bool						  m_useAcceptEx;				// 使用acceptEX()==true==EX  
+																// 使用accept()==false
+	bool						  m_ServerRunning;				// 服务器运行判断
 
 	WSADATA						  wsaData;						// Winsock服务初始化
 
@@ -312,20 +324,17 @@ protected:
 
 	HANDLE						  m_IOCompletionPort;			// 完成端口句柄
 
-	// AcceptEX()
+	HANDLE						  *m_workThread;                // 工作线程的句柄指针
 
-	PER_HANDLE_DATA               *m_ListenSockInfo;			// 用于监听Context
+	HANDLE                        *m_WorkerThreadsHandleArray;  // 工作线程句柄数组
+
+	PER_HANDLE_DATA               *m_ListenSockInfo;			// 服务器监听Context
+
 	LPFN_ACCEPTEX				  fnAcceptEx;					// AcceptEx函数指针
 	LPFN_GETACCEPTEXSOCKADDRS	  fnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针
-	//LONG						  connectCnt;					// 当前的连接数量
-	//LONG						  acceptPostCnt;				// 当前投递的的Accept数量
 
-	// Accept()
-	WinSocket					  m_ServerSocket;				// 封装的socket类库
-
-	HANDLE*						  m_WorkerThreadsHandleArray;	// 工作者线程句柄数组
+	WinSocket					  m_ServerSock;				    // 服务器socket信息
 
 	int							  m_nThreads;				    // 工作线程数量
-
 
 };

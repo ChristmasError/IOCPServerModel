@@ -6,48 +6,56 @@ IOContextPool _PER_HANDLE_DATA::ioContextPool;		// 初始化
 
 /////////////////////////////////////////////////////////////////
 // 启动服务器
-bool IOCPModel::StartEX()
+// public:
+bool IOCPModel::ServerStart(bool serveroption)
 {
-	if (_ServerRunning) {
+	// 服务器运行状态检测
+	if (m_ServerRunning) 
+	{
 		_ShowMessage("服务器运行中,请勿重复运行！\n");
 		return false;
 	}
-	useAcceptEx = true;
-	InitializeIOCPResource(useAcceptEx);
+	// 根据创建选择，初始化服务器所需资源
+	m_useAcceptEx = serveroption;
+	InitializeIOCPResource(m_useAcceptEx);
 
-	_ServerRunning = true;
+	// 服务器开始工作
+	if (true == m_useAcceptEx)
+	{
+		_StartEX();
+	}
+	else// (false == m_useAcceptEx)
+	{
+		_Start();
+	}
+	return true;
+}
+// private:
+bool IOCPModel::_StartEX()
+{
+	m_ServerRunning = RUNNING;
 	this->_ShowMessage("本服务器已准备就绪，正在等待客户端的接入......\n");
 
-	while (_ServerRunning)
+	while (m_ServerRunning)
 	{
 		Sleep(1000);
 	}
 	return true;
 }
-bool IOCPModel::Start()
+bool IOCPModel::_Start()
 {
-	// 服务器运行状态检测
-	if (_ServerRunning) {
-		_ShowMessage("服务器运行中,请勿重复运行！\n");
-		return false;
-	}
-
-	useAcceptEx = false;
-	InitializeIOCPResource(useAcceptEx);
-
-
-	_ServerRunning = RUNNING;
+	m_ServerRunning = RUNNING;
 	this->_ShowMessage("本服务器已准备就绪，正在等待客户端的接入......\n");
-	
 
-	WinSocket acceptSock; //listen接收的套接字
+	// 服务器accept()接受客户端新套接字
+	WinSocket acceptSock; 
 	LPPER_HANDLE_DATA handleInfo;
 
 	DWORD RecvBytes, Flags = 0;
 
 	while (true)
 	{
-		acceptSock = m_ServerSocket.Accept();
+		acceptSock = m_ServerSock.Accept();
 		acceptSock.SetBlock(false);
 		if (INVALID_SOCKET == acceptSock.socket)
 		{
@@ -60,12 +68,9 @@ bool IOCPModel::Start()
 				return -1;
 			}
 		}
-
 		handleInfo = new PER_HANDLE_DATA();
 		handleInfo->m_Sock = acceptSock;
-
 		CreateIoCompletionPort((HANDLE)(handleInfo->m_Sock.socket), m_IOCompletionPort, (DWORD)handleInfo, 0);
-
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
 		// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
 		// 单I/O操作数据(I/O重叠)
@@ -75,7 +80,6 @@ bool IOCPModel::Start()
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -100,11 +104,10 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 			break;
 		}
 		// NULL_POSTED 操作未初始化
-		if (ioInfo->m_OpType == NULL_POSTED) {
-			
+		if (ioInfo->m_OpType == NULL_POSTED) 
+		{
 			continue;
 		}
-
 		if(bRet== false)
 		{
 			DWORD dwError = GetLastError();
@@ -179,7 +182,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 bool IOCPModel::InitializeIOCPResource(bool useAcceptEX)
 {
 	// 服务器非运行
-	_ServerRunning = STOP;
+	m_ServerRunning = STOP;
 
 	// 初始化退出线程事件
 	m_WorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -367,7 +370,7 @@ bool IOCPModel::_InitializeListenSocket()
 		//异常
 	}
 
-	for (int i = 0; i<5; i++)
+	for (int i = 0; i<200; i++)
 	{
 		DWORD dwBytes;
 
@@ -395,62 +398,16 @@ bool IOCPModel::_InitializeListenSocket()
 		}
 	}
 
-
-	
-
-	//// 提取扩展函数指针
-	//DWORD dwBytes = 0;
-	//if (SOCKET_ERROR == WSAIoctl(
-	//	m_ListenSockInfo->m_Sock.socket,
-	//	SIO_GET_EXTENSION_FUNCTION_POINTER,
-	//	&guidAcceptEx,
-	//	sizeof(guidAcceptEx),
-	//	&fnAcceptEx,
-	//	sizeof(fnAcceptEx),
-	//	&dwBytes,
-	//	NULL,
-	//	NULL))
-	//{
-	//	this->_ShowMessage("提取扩展1函数指针失败!\n");
-	//	_Deinitialize();
-	//	return false;
-	//}
-	//if (SOCKET_ERROR == WSAIoctl(
-	//	m_ListenSockInfo->m_Sock.socket, 
-	//	SIO_GET_EXTENSION_FUNCTION_POINTER,
-	//	&guidGetAcceptSockAddrs,
-	//	sizeof(guidGetAcceptSockAddrs),
-	//	&fnGetAcceptExSockAddrs,
-	//	sizeof(fnGetAcceptExSockAddrs),
-	//	&dwBytes,
-	//	NULL,
-	//	NULL))
-	//{
-	//	this->_ShowMessage("提取扩展2函数指针失败!\n");
-	//	_Deinitialize();
-	//	return false;
-	//}
-	//for (size_t i = 0; i < MAX_POST_ACCEPT; i++)
-	//{
-	//	PER_IO_DATA *ioContext = m_ListenSockInfo->GetNewIOContext();
-	//	if (false == _PostAccept(m_ListenSockInfo, ioContext))
-	//	{
-	//		this->_ShowMessage("_PostAccept失败!\n");
-	//		m_ListenSockInfo->RemoveIOContext(ioContext);
-	//		return false;
-	//	}
-	//}
-
 	return true;
 }
 bool IOCPModel::_InitializeServerSocket()
 {
-	m_ServerSocket.CreateSocket();
-	m_ServerSocket.port = DEFAULT_PORT;
-	m_ServerSocket.Bind(m_ServerSocket.port);
+	m_ServerSock.CreateSocket();
+	m_ServerSock.port = DEFAULT_PORT;
+	m_ServerSock.Bind(m_ServerSock.port);
 
 	// 开始监听
-	if (SOCKET_ERROR == listen(m_ServerSocket.socket, 5)) {
+	if (SOCKET_ERROR == listen(m_ServerSock.socket, 5)) {
 		cerr << "监听失败. Error: " << GetLastError() << endl;
 		return false;
 	}
