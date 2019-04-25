@@ -7,7 +7,7 @@ IOContextPool _PER_HANDLE_DATA::ioContextPool;		// 初始化
 /////////////////////////////////////////////////////////////////
 // 启动服务器
 // public:
-bool IOCPModel::ServerStart(bool serveroption)
+bool IOCPModel::StartServer(bool serveroption)
 {
 	// 服务器运行状态检测
 	if (m_ServerRunning) 
@@ -17,7 +17,7 @@ bool IOCPModel::ServerStart(bool serveroption)
 	}
 	// 根据创建选择，初始化服务器所需资源
 	m_useAcceptEx = serveroption;
-	InitializeIOCPResource(m_useAcceptEx);
+	_InitializeServerResource(m_useAcceptEx);
 
 	// 服务器开始工作
 	if (true == m_useAcceptEx)
@@ -70,7 +70,7 @@ bool IOCPModel::_Start()
 		}
 		handleInfo = new PER_HANDLE_DATA();
 		handleInfo->m_Sock = acceptSock;
-		CreateIoCompletionPort((HANDLE)(handleInfo->m_Sock.socket), m_IOCompletionPort, (DWORD)handleInfo, 0);
+		CreateIoCompletionPort((HANDLE)(handleInfo->m_Sock.socket), m_hIOCompletionPort, (DWORD)handleInfo, 0);
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
 		// 这些I/O请求完成后，工作者线程会为I/O请求提供服务	
 		// 单I/O操作数据(I/O重叠)
@@ -82,7 +82,19 @@ bool IOCPModel::_Start()
 	}
 	return true;
 }
-
+/////////////////////////////////////////////////////////////////
+// 关闭服务器
+void IOCPModel::StopServer()
+{
+	SetEvent(m_hWorkerShutdownEvent);
+	for (int i = 0; i < m_nThreads; i++)
+	{
+		PostQueuedCompletionStatus(m_hIOCompletionPort, 0, (DWORD)EXIT_CODE, NULL);
+	}
+	WaitForMultipleObjects(m_nThreads, m_phWorkerThreadArray, TRUE, INFINITE);
+	// 释放资源
+	_Deinitialize();
+}
 /////////////////////////////////////////////////////////////////
 // 工作线程函数
 DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
@@ -94,9 +106,9 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 	DWORD RecvBytes;
 	DWORD Flags = 0;
 
-	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCP->m_WorkerShutdownEvent,0))
+	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCP->m_hWorkerShutdownEvent,0))
 	{
-		bool bRet = GetQueuedCompletionStatus(IOCP->m_IOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);
+		bool bRet = GetQueuedCompletionStatus(IOCP->m_hIOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);
 		//收到退出线程标志，直接退出工作线程
 
 		if (EXIT_CODE == (DWORD)handleInfo)
@@ -179,14 +191,8 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 
 /////////////////////////////////////////////////////////////////
 // 初始化服务器资源
-bool IOCPModel::InitializeIOCPResource(bool useAcceptEX)
+bool IOCPModel::_InitializeServerResource(bool useAcceptEX)
 {
-	// 服务器非运行
-	m_ServerRunning = STOP;
-
-	// 初始化退出线程事件
-	m_WorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 	// 初始化IOCP
 	if (false == _InitializeIOCP())
 	{
@@ -217,33 +223,21 @@ bool IOCPModel::InitializeIOCPResource(bool useAcceptEX)
 	{
 		if (false == _InitializeListenSocket())
 		{
-			this->_ShowMessage("初始化服务器Socket失败！\n");
+			this->_ShowMessage("初始化服务器监听Socket失败！\n");
 			this->_Deinitialize();
 			return false;
 		}
 		else
 		{
-			this->_ShowMessage("初始化服务器Socket完毕！\n");
+			this->_ShowMessage("初始化服务器监听Socket完毕！\n");
 		}
 	}
-
 
 	return true;
 }
 
 /////////////////////////////////////////////////////////////////
 // 加载SOCKET库
-// public
-bool IOCPModel::LoadSocketLib()
-{
-	if (_LoadSocketLib() == true)
-		return true;
-	else
-		return false;
-}
-
-// 加载SOCKET库
-// private
 bool IOCPModel::_LoadSocketLib()
 {
 	int nResult;
@@ -262,9 +256,9 @@ bool IOCPModel::_LoadSocketLib()
 bool IOCPModel::_InitializeIOCP()
 {
 	// 初始化完成端口
-	m_IOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	//m_WorkThreadShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if (NULL == m_IOCompletionPort)
+	if (NULL == m_hIOCompletionPort)
 		cout << "创建完成端口失败!\n";
 
 	// 创建IO线程--线程里面创建线程池
@@ -299,7 +293,7 @@ bool IOCPModel::_InitializeListenSocket()
 		return false;
 	}
 	//listen socket与完成端口绑定
-	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_IOCompletionPort, (DWORD)m_ListenSockInfo, 0))
+	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)m_ListenSockInfo, 0))
 	{
 		//RELEASE_SOCKET(m_ListenSockInfo->m_Sock.socket)
 		this->_ShowMessage("Listen socket与完成端口绑定失败!\n");
@@ -421,17 +415,17 @@ bool IOCPModel::_InitializeServerSocket()
 void IOCPModel::_Deinitialize()
 {
 	// 关闭系统退出事件句柄
-	RELEASE_HANDLE(m_WorkerShutdownEvent);
+	RELEASE_HANDLE(m_hWorkerShutdownEvent);
 
 	// 释放工作者线程句柄指针
 	for (int i = 0; i < m_nThreads; i++)
 	{
-		RELEASE_HANDLE(m_WorkerThreadsHandleArray[i]);
+		RELEASE_HANDLE(m_phWorkerThreadArray[i]);
 	}
-	delete[] m_WorkerThreadsHandleArray;
+	delete[] m_phWorkerThreadArray;
 
 	// 关闭IOCP句柄
-	RELEASE_HANDLE(m_IOCompletionPort);
+	RELEASE_HANDLE(m_hIOCompletionPort);
 
 	// 关闭服务器socket
 	// ！！！！！还没写 释放 WinSocket    m_ServerSocket;
@@ -473,7 +467,7 @@ bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 	}
 
 	// 4. 将新socket和完成端口绑定
-	if (NULL == CreateIoCompletionPort((HANDLE)newSockContext->m_Sock.socket, m_IOCompletionPort, (DWORD)newSockContext, 0))
+	if (NULL == CreateIoCompletionPort((HANDLE)newSockContext->m_Sock.socket, m_hIOCompletionPort, (DWORD)newSockContext, 0))
 	{
 		DWORD dwErr = WSAGetLastError();
 		if (dwErr != ERROR_INVALID_PARAMETER)
@@ -555,26 +549,6 @@ bool IOCPModel::_PostAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 		return false;
 	}
 
-	//DWORD dwBytes = 0;
-	//ioInfo->m_OpType = ACCEPT_POSTED;
-	////ioInfo->m_AcceptSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	//if (INVALID_SOCKET == ioInfo->m_AcceptSocket)
-	//{
-	//	this->_ShowMessage("_PostAccept() error: 1 !\n");
-	//	return false;
-	//}
-
-	//// 将接收缓冲置为0,令AcceptEx直接返回,防止拒绝服务攻击
-	//if (false == fnAcceptEx(m_ListenSockInfo->m_Sock.socket, ioInfo->m_AcceptSocket, ioInfo->m_wsaBuf.buf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &ioInfo->m_Overlapped))
-	//{
-	//	if (WSA_IO_PENDING != WSAGetLastError())
-	//	{
-	//		this->_ShowMessage("_PostAccept() error: 2 !\n");
-	//		return false;
-	//	}
-	//}
-
-	////InterlockedIncrement(&acceptPostCnt);
 	return true;
 }
 

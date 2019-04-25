@@ -229,9 +229,9 @@ class IOCPModel
 public:
 	// 服务器内资源初始化
 	IOCPModel():m_useAcceptEx(false),
-				m_ServerRunning(false),
-				m_IOCompletionPort(INVALID_HANDLE_VALUE),
-				m_workThread(NULL),
+				m_ServerRunning(STOP),
+				m_hIOCompletionPort(INVALID_HANDLE_VALUE),
+				m_phWorkerThreadArray(NULL),
 				m_ListenSockInfo(NULL),
 				fnAcceptEx(NULL),
 				fnGetAcceptExSockAddrs(NULL),
@@ -241,8 +241,9 @@ public:
 			this->_ShowMessage("加载Winsock库成功！\n");
 		else
 			// 加载失败 抛出异常
-		// 创建工作线程退出事件
-		m_WorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		// 初始化退出线程事件
+		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
 	}
 	~IOCPModel()
 	{
@@ -251,24 +252,10 @@ public:
 public:
 	// 开启服务器
 	// 根据serveroption判断accept()/acceptEX()工作模式
-	bool ServerStart(bool serveroption = false);
+	bool StartServer(bool serveroption = false);
 	
 	// 关闭服务器
-	//void Stop();
-
-	// 初始化服务器资源
-	// 1.初始化Winsock服务
-	// 2.初始化IOCP + 工作函数线程池
-	bool InitializeIOCPResource(bool ex);
-
-	// 加载Winsock库:public
-	bool LoadSocketLib();
-
-	// 卸载Socket库
-	bool UnloadSocketLib() 
-	{ 
-		WSACleanup(); 
-	}
+	void StopServer();	
 
 	// 事件通知函数(派生类重载此族函数)
 	//virtual void ConnectionEstablished(PER_HANDLE_DATA *handleInfo) = 0;
@@ -282,8 +269,22 @@ private:
 	bool _Start();
 	bool _StartEX();
 
+	// 初始化服务器资源
+	// 1.初始化Winsock服务
+	// 2.初始化IOCP + 工作函数线程池
+	bool _InitializeServerResource(bool useAcceptEX);
+
+	// 释放服务器资源
+	void _Deinitialize();
+
 	// 加载Winsock库:private
 	bool _LoadSocketLib();
+
+	// 卸载Socket库
+	bool _UnloadSocketLib()
+	{
+		WSACleanup();
+	}
 
 	// 初始化IOCP:完成端口与工作线程线程池创建
 	bool _InitializeIOCP();
@@ -297,9 +298,6 @@ private:
 
 	// 打印消息
 	void _ShowMessage(const char*, ...) const;
-
-	// 释放所有资源
-	void _Deinitialize();
 
 	// 处理I/O请求
 	bool _DoAccept(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
@@ -320,13 +318,11 @@ protected:
 
 	SYSTEM_INFO					  m_SysInfo;					// 操作系统信息
 
-	HANDLE					      m_WorkerShutdownEvent;		// 通知线程系统推出事件
+	HANDLE					      m_hWorkerShutdownEvent;		// 通知线程系统推出事件
 
-	HANDLE						  m_IOCompletionPort;			// 完成端口句柄
+	HANDLE						  m_hIOCompletionPort;			// 完成端口句柄
 
-	HANDLE						  *m_workThread;                // 工作线程的句柄指针
-
-	HANDLE                        *m_WorkerThreadsHandleArray;  // 工作线程句柄数组
+	HANDLE						  *m_phWorkerThreadArray;       // 工作线程的句柄指针
 
 	PER_HANDLE_DATA               *m_ListenSockInfo;			// 服务器监听Context
 
@@ -336,5 +332,4 @@ protected:
 	WinSocket					  m_ServerSock;				    // 服务器socket信息
 
 	int							  m_nThreads;				    // 工作线程数量
-
 };
