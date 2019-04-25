@@ -74,6 +74,6 @@ int main()
 {
 	HTTPServer IOCPserver;
 	IOCPserver.StartServer(EX);
-	IOCPserver.StopServer();
+	//IOCPserver.StopServer();
 	return 0;
 }

@@ -263,16 +263,19 @@ bool IOCPModel::_InitializeIOCP()
 
 	// 创建IO线程--线程里面创建线程池
 	// 基于处理器的核心数量创建线程
-	GetSystemInfo(&m_SysInfo);
-	for (DWORD i = 0; i < (m_SysInfo.dwNumberOfProcessors * 2); ++i) {
+	m_nThreads = _GetNumberOfProcessors() * 2;
+	m_phWorkerThreadArray = new HANDLE[m_nThreads];
+	for (DWORD i = 0; i <m_nThreads; ++i)
+	{
 		// 创建服务器工作器线程，并将完成端口传递到该线程
-		HANDLE WORKThread = CreateThread(NULL, 0, _WorkerThread, (void*)this, 0, NULL);
-		if (NULL == WORKThread) {
+		HANDLE hWorkThread = CreateThread(NULL, NULL, _WorkerThread, (void*)this, 0, NULL);
+		if (NULL == hWorkThread) {
 			cerr << "创建线程句柄失败！Error:" << GetLastError() << endl;
 			system("pause");
-			return -1;
+			return false;
 		}
-		CloseHandle(WORKThread);
+		m_phWorkerThreadArray[i] = hWorkThread;
+		CloseHandle(hWorkThread);
 	}
 	this->_ShowMessage("完成创建工作者线程数量：%d 个\n", m_nThreads);
 	return true;	
@@ -289,14 +292,14 @@ bool IOCPModel::_InitializeListenSocket()
 	m_ListenSockInfo->m_Sock.socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if(INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
 	{ 
-		this->_ShowMessage("创建监听socket context失败!\n");
+		this->_ShowMessage("创建监听socket失败!\n");
 		return false;
 	}
 	//listen socket与完成端口绑定
 	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)m_ListenSockInfo, 0))
 	{
 		//RELEASE_SOCKET(m_ListenSockInfo->m_Sock.socket)
-		this->_ShowMessage("Listen socket与完成端口绑定失败!\n");
+		this->_ShowMessage("监听socket与完成端口绑定失败!\n");
 		return false;
 	}
 	// 绑定地址&端口	
@@ -308,7 +311,6 @@ bool IOCPModel::_InitializeListenSocket()
 		cerr << "监听失败. Error: " << GetLastError() << endl;
 		return false;
 	}
-
 
 	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
 	GUID guidAcceptEx = WSAID_ACCEPTEX;
@@ -364,7 +366,7 @@ bool IOCPModel::_InitializeListenSocket()
 		//异常
 	}
 
-	for (int i = 0; i<200; i++)
+	for (int i = 0; i<MAX_POST_ACCEPT; i++)
 	{
 		DWORD dwBytes;
 
@@ -391,9 +393,11 @@ bool IOCPModel::_InitializeListenSocket()
 			}
 		}
 	}
-
 	return true;
 }
+
+/////////////////////////////////////////////////////////////////
+// 创建服务器套接字
 bool IOCPModel::_InitializeServerSocket()
 {
 	m_ServerSock.CreateSocket();
@@ -405,10 +409,8 @@ bool IOCPModel::_InitializeServerSocket()
 		cerr << "监听失败. Error: " << GetLastError() << endl;
 		return false;
 	}
-
 	return true;
 }
-
 
 /////////////////////////////////////////////////////////////////
 // 释放所有资源
@@ -433,6 +435,14 @@ void IOCPModel::_Deinitialize()
 	this->_ShowMessage("释放资源完毕！\n");
 }
 
+///////////////////////////////////////////////////////////////////
+// 获得本机中处理器的数量
+int IOCPModel::_GetNumberOfProcessors()
+{
+	GetSystemInfo(&m_SysInfo);
+	return m_SysInfo.dwNumberOfProcessors;
+}
+
 /////////////////////////////////////////////////////////////////
 // 打印消息
 void IOCPModel::_ShowMessage(const char* msg, ...) const
@@ -444,8 +454,6 @@ void IOCPModel::_ShowMessage(const char* msg, ...) const
 // 处理I/O请求
 bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 {
-	//InterlockedIncrement(&connectCnt);
-	//InterlockedDecrement(&acceptPostCnt);
 	SOCKADDR_IN *clientAddr = NULL;
 	SOCKADDR_IN *localAddr = NULL;
 	int clientAddrLen = sizeof(SOCKADDR_IN);
@@ -457,7 +465,6 @@ bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 	// 2. 为新连接建立一个SocketContext 
 	PER_HANDLE_DATA *newSockContext = new PER_HANDLE_DATA;
 	newSockContext->m_Sock.socket = ioInfo->m_AcceptSocket;
-	//memcpy_s(&(newSockContext->clientAddr), sizeof(SOCKADDR_IN), clientAddr, sizeof(SOCKADDR_IN));
 
 	// 3. 将listenSocketContext的IOContext 重置后继续投递AcceptEx
 	ioInfo->Reset();

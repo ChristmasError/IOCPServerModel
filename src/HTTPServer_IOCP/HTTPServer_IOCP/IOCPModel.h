@@ -1,4 +1,5 @@
 #pragma once
+
 #include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
 #include<WinSock2.h>
 #include<Windows.h>
@@ -23,7 +24,7 @@
 // 传递给Worker线程的退出信号
 #define WORK_THREADS_EXIT NULL
 // 同时投递的Accept数量
-#define MAX_POST_ACCEPT (10)
+#define MAX_POST_ACCEPT (2000)
 // IOContextPool中的初始数量
 #define INIT_IOCONTEXT_NUM (100)				
 // 默认端口
@@ -299,6 +300,9 @@ private:
 	// 打印消息
 	void _ShowMessage(const char*, ...) const;
 
+	// 获得本机中处理器的数量
+	int _GetNumberOfProcessors();
+
 	// 处理I/O请求
 	bool _DoAccept(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 	bool _DoRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
@@ -310,17 +314,17 @@ private:
 	bool _PostSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 
 protected:
-	bool						  m_useAcceptEx;				// 使用acceptEX()==true==EX  
-																// 使用accept()==false
-	bool						  m_ServerRunning;				// 服务器运行判断
+	bool						  m_useAcceptEx;				// 使用acceptEX()==true || 使用accept()==false
+																
+	bool						  m_ServerRunning;				// 服务器运行状态判断
 
 	WSADATA						  wsaData;						// Winsock服务初始化
 
 	SYSTEM_INFO					  m_SysInfo;					// 操作系统信息
 
-	HANDLE					      m_hWorkerShutdownEvent;		// 通知线程系统推出事件
-
 	HANDLE						  m_hIOCompletionPort;			// 完成端口句柄
+
+	HANDLE					      m_hWorkerShutdownEvent;		// 通知线程系统推出事件
 
 	HANDLE						  *m_phWorkerThreadArray;       // 工作线程的句柄指针
 
