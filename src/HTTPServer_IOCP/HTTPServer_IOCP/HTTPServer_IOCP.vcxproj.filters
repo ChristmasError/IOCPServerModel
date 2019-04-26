@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="XHttpResponse.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="IOCPModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -27,15 +24,18 @@
     <ClCompile Include="WinSock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="HttpResponse.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="XHttpResponse.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="IOCPModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="WinSock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpResponse.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

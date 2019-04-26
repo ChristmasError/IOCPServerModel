@@ -1,6 +1,6 @@
 #pragma once
 
-#include<XHttpResponse.h>
+#include<HttpResponse.h>
 #include<WinSock.h>
 
 //#include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中

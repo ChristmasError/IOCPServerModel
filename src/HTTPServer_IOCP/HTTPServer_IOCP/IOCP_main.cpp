@@ -4,7 +4,7 @@ class HTTPServer :public IOCPModel
 {
 	void RecvCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) 
 	{
-		XHttpResponse res;     //用于处理http请求
+		HttpResponse res;     //用于处理http请求
 
 		switch (ioInfo->m_OpType)
 		{
