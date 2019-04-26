@@ -1,21 +1,13 @@
 #pragma once
 
 #include<HttpResponse.h>
-#include<WinSock.h>
+#include<WinSock.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
 
-//#include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
-//#include<WinSock2.h>
 #include<Windows.h>
 #include<MSWSock.h>
-
 #include<vector>
-#include<string>
 #include<list>
-
 #include<iostream>
-
-
-#pragma comment(lib, "Kernel32.lib")	// IOCP需要用到的动态链接库
 
 // 服务器运行状态
 #define RUNNING true
@@ -63,11 +55,14 @@ typedef enum _OPERATION_TYPE
 	RECV_POSTED,		// 标志投递的是接收操作
 	SEND_POSTED,		// 标志投递的是发送操作
 	NULL_POSTED			// 初始化用
+
 } OPERATION_TYPE;
 
-//========================================================
-// 单IO数据结构体定义(用于每一个重叠操作的参数)
-//========================================================
+//====================================================================================
+//
+//				单IO数据结构体定义(用于每一个重叠操作的参数)
+//
+//====================================================================================
 typedef struct _PER_IO_DATA
 {
 	WSAOVERLAPPED	m_Overlapped;					// OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
@@ -102,6 +97,7 @@ typedef struct _PER_IO_DATA
 		m_OpType = NULL_POSTED;
 		ZeroMemory(m_buffer, BUF_SIZE);
 	}
+
 } PER_IO_DATA, *LPPER_IO_DATA;
 //========================================================
 // IOContextPool
@@ -170,26 +166,27 @@ public:
 		LeaveCriticalSection(&csLock);
 	}
 };
-//========================================================
-// 单IO数据结构题定义(每一个客户端socket参数）
-//========================================================
-typedef struct _PER_HANDLE_DATA
+//====================================================================================
+//
+//				单句柄数据结构体定义(用于每一个完成端口，也就是每一个Socket的参数)
+//
+//====================================================================================
+typedef struct _PER_SOCKET_DATA
 {	
 private:
 	vector<PER_IO_DATA*>	arrIoContext;		  // 同一个socket上的多个IO请求
 	static IOContextPool    ioContextPool;		  //空闲的IOcontext池子
-	//CRITICAL_SECTION		csLock;
 	//vector<PER_IO_DATA*>    m_vecIoContex;	  //每个socket接收到的所有IO请求数组
 public:
 	WinSock					m_Sock;		          //每一个socket的信息
 
 	// 初始化
-	_PER_HANDLE_DATA()
+	_PER_SOCKET_DATA()
 	{
 		m_Sock.socket = INVALID_SOCKET;
 	}
 	// 释放资源
-	~_PER_HANDLE_DATA()
+	~_PER_SOCKET_DATA()
 	{
 	}
 
@@ -222,7 +219,8 @@ public:
 			}
 		}
 	}
-} PER_HANDLE_DATA,*LPPER_HANDLE_DATA;
+
+} PER_SOCKET_DATA,*LPPER_SOCKET_DATA;
 
 //========================================================
 //					IOCPModel类定义
@@ -263,7 +261,7 @@ public:
 	//virtual void ConnectionEstablished(PER_HANDLE_DATA *handleInfo) = 0;
 	//virtual void ConnectionClosed(PER_HANDLE_DATA *handleInfo) = 0;
 	//virtual void ConnectionError(PER_HANDLE_DATA *handleInfo, int error) = 0;
-	virtual void RecvCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
+	virtual void RecvCompleted(PER_SOCKET_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
 	//virtual void SendCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
 
 private:
@@ -305,14 +303,14 @@ private:
 	int _GetNumberOfProcessors();
 
 	// 处理I/O请求
-	bool _DoAccept(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
-	bool _DoRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
-	bool _DoSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
+	bool _DoAccept(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
+	bool _DoRecv(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
+	bool _DoSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
 
 	// 投递I/O请求
 	bool _PostAccept(PER_IO_DATA *pid);
-	bool _PostRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
-	bool _PostSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
+	bool _PostRecv(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
+	bool _PostSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
 
 protected:
 	bool						  m_useAcceptEx;				// 使用acceptEX()==true || 使用accept()==false
@@ -329,7 +327,7 @@ protected:
 
 	HANDLE						  *m_phWorkerThreadArray;       // 工作线程的句柄指针
 
-	PER_HANDLE_DATA               *m_ListenSockInfo;			// 服务器监听Context
+	PER_SOCKET_DATA               *m_ListenSockInfo;			// 服务器监听Context
 
 	LPFN_ACCEPTEX				  m_lpfnAcceptEx;					// AcceptEx函数指针
 	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针

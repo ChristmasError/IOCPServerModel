@@ -1,7 +1,7 @@
 #include <IOCPModel.h>
 #include <mstcpip.h>
 
-IOContextPool _PER_HANDLE_DATA::ioContextPool;		// 初始化
+IOContextPool _PER_SOCKET_DATA::ioContextPool;		// static成员初始化
 
 /////////////////////////////////////////////////////////////////
 // 启动服务器
@@ -48,7 +48,7 @@ bool IOCPModel::_Start()
 
 	// 服务器accept()接受客户端新套接字
 	WinSock acceptSock; 
-	LPPER_HANDLE_DATA handleInfo;
+	LPPER_SOCKET_DATA handleInfo;
 
 	DWORD RecvBytes, Flags = 0;
 
@@ -67,7 +67,7 @@ bool IOCPModel::_Start()
 				return -1;
 			}
 		}
-		handleInfo = new PER_HANDLE_DATA();
+		handleInfo = new PER_SOCKET_DATA();
 		handleInfo->m_Sock = acceptSock;
 		CreateIoCompletionPort((HANDLE)(handleInfo->m_Sock.socket), m_hIOCompletionPort, (DWORD)handleInfo, 0);
 		// 开始在接受套接字上处理I/O使用重叠I/O机制,在新建的套接字上投递一个或多个异步,WSARecv或WSASend请求
@@ -100,7 +100,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 {
 	IOCPModel* IOCP = (IOCPModel*)lpParam;
 ;
-	LPPER_HANDLE_DATA handleInfo = NULL;
+	LPPER_SOCKET_DATA handleInfo = NULL;
 	LPPER_IO_DATA ioInfo = NULL;
 	DWORD RecvBytes;
 	DWORD Flags = 0;
@@ -287,7 +287,7 @@ bool IOCPModel::_InitializeListenSocket()
 {
 	// 创建用于监听的 Listen Socket Context
 
-	m_ListenSockInfo = new PER_HANDLE_DATA;
+	m_ListenSockInfo = new PER_SOCKET_DATA;
 	m_ListenSockInfo->m_Sock.socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if(INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
 	{ 
@@ -460,7 +460,7 @@ bool IOCPModel::_PostAccept(PER_IO_DATA *pAcceptIoContext)
 	return true;
 }
 
-bool IOCPModel::_PostRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid)
+bool IOCPModel::_PostRecv(PER_SOCKET_DATA* phd, PER_IO_DATA *pid)
 {
 	DWORD RecvBytes = 0, Flags = 0;
 
@@ -475,13 +475,13 @@ bool IOCPModel::_PostRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid)
 	return true;
 }
 
-bool IOCPModel::_PostSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid)
+bool IOCPModel::_PostSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid)
 {
 	return true;
 }
 /////////////////////////////////////////////////////////////////
 // 处理I/O请求
-bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
+bool IOCPModel::_DoAccept(PER_SOCKET_DATA* handleInfo, PER_IO_DATA *ioInfo)
 {
 	SOCKADDR_IN *clientAddr = NULL;
 	SOCKADDR_IN *localAddr = NULL;
@@ -494,7 +494,7 @@ bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 
 
 	// 2. 为新连接建立一个SocketContext 
-	PER_HANDLE_DATA *pNewSockContext = new PER_HANDLE_DATA;
+	PER_SOCKET_DATA *pNewSockContext = new PER_SOCKET_DATA;
 	pNewSockContext->m_Sock.socket	 = ioInfo->m_AcceptSocket;
 	memcpy(&(pNewSockContext->m_Sock.addr), clientAddr, sizeof(SOCKADDR_IN));
 
@@ -549,7 +549,7 @@ bool IOCPModel::_DoAccept(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 	return true;
 }
 
-bool IOCPModel::_DoRecv(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
+bool IOCPModel::_DoRecv(PER_SOCKET_DATA* handleInfo, PER_IO_DATA *ioInfo)
 {
 	RecvCompleted(handleInfo, ioInfo);
 
@@ -561,7 +561,7 @@ bool IOCPModel::_DoRecv(PER_HANDLE_DATA* handleInfo, PER_IO_DATA *ioInfo)
 	return true;
 }
 
-bool IOCPModel::_DoSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid)
+bool IOCPModel::_DoSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid)
 {
 	return true;
 }

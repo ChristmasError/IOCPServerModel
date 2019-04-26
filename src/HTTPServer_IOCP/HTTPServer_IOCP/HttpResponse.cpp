@@ -6,8 +6,6 @@ using namespace std;
 bool HttpResponse::SetRequest(string request)
 {
 	string src = request;
-	//cout <<"¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ýsrc¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý "<<endl<< src << endl<< "¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡üsrc¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü¡ü "<<endl;
-	// /    /index.html       //ff          /index.php
 	string pattern = "^([A-Z]+) /([a-zA-Z0-9]*([.][a-zA-Z]*)?)[?]?(.*) HTTP/1";
 	regex r(pattern);
 	smatch mas;

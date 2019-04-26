@@ -56,7 +56,10 @@ bool WinSock::Bind(unsigned short port)
 {
 	GetLocalIP();
 	if (socket == INVALID_SOCKET)
-		std::cout << "未初始化socket！\n";
+	{
+		std::cerr << "INVALID_SOCKET!\n";
+		return false;
+	}
 	//创建端口成功后
 	struct sockaddr_in saddr;
 	saddr.sin_family	  = AF_INET;
@@ -108,8 +111,11 @@ int WinSock::Send(const char* buf, int size)
 
 bool WinSock::SetBlock(bool isblock)
 {
-	if (socket <= 0)
+	if (socket == INVALID_SOCKET)
+	{
+		std::cerr << "INVALID_SOCKET!\n";
 		return false;
+	}
 	unsigned long ul = 0;
 	if (!isblock)
 		ul = 1;
@@ -119,8 +125,11 @@ bool WinSock::SetBlock(bool isblock)
 
 bool WinSock::Connect(const char* ip, unsigned short port, int timeout)
 {
-	if (socket <= 0)
-		CreateSocket();
+	if (socket == INVALID_SOCKET)
+	{
+		std::cerr << "INVALID_SOCKET!\n";
+		return false;
+	}
 	sockaddr_in saddr;
 	saddr.sin_family = AF_INET;
 	saddr.sin_port = htons(port);

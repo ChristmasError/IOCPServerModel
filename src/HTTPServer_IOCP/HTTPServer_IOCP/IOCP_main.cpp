@@ -2,7 +2,7 @@
 using namespace std;
 class HTTPServer :public IOCPModel
 {
-	void RecvCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) 
+	void RecvCompleted(PER_SOCKET_DATA *handleInfo, PER_IO_DATA *ioInfo)
 	{
 		HttpResponse res;     //用于处理http请求
 

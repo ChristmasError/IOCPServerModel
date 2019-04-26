@@ -1,9 +1,8 @@
-#pragma once
+//#pragma once
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 
 #pragma warning(disable : 4996) 
 
-#include<thread>
 #include<winsock2.h>
 #include<iostream>
 
@@ -36,3 +35,4 @@ public:
 private:
 	void _ShowMessage(const char* ch, ...) const;
 };
+
