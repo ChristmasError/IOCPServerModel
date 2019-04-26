@@ -1,7 +1,10 @@
 #pragma once
 
-#include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
-#include<WinSock2.h>
+#include<XHttpResponse.h>
+#include<WinSock.h>
+
+//#include<WinSocket.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
+//#include<WinSock2.h>
 #include<Windows.h>
 #include<MSWSock.h>
 
@@ -10,7 +13,7 @@
 #include<list>
 
 #include<iostream>
-#include"XHttpResponse.h"
+
 
 #pragma comment(lib, "Kernel32.lib")	// IOCP需要用到的动态链接库
 
@@ -29,8 +32,6 @@
 #define INIT_IOCONTEXT_NUM (100)				
 // 默认端口
 #define DEFAULT_PORT 8888
-// 默认IP
-#define DEFAULT_IP "10.11.147.70"
 // 退出标志
 #define EXIT_CODE (-1)
 
@@ -80,6 +81,7 @@ typedef struct _PER_IO_DATA
 	{
 		ZeroMemory(&(m_Overlapped), sizeof(WSAOVERLAPPED));
 		ZeroMemory(m_buffer, BUF_SIZE);
+		m_AcceptSocket = INVALID_SOCKET;
 		m_wsaBuf.buf = m_buffer;
 		m_wsaBuf.len = BUF_SIZE;
 		m_OpType = NULL_POSTED;
@@ -179,12 +181,12 @@ private:
 	//CRITICAL_SECTION		csLock;
 	//vector<PER_IO_DATA*>    m_vecIoContex;	  //每个socket接收到的所有IO请求数组
 public:
-	WinSocket				m_Sock;		          //每一个socket的信息
+	WinSock					m_Sock;		          //每一个socket的信息
 
 	// 初始化
 	_PER_HANDLE_DATA()
 	{
-		m_Sock.CreateSocket();
+		m_Sock.socket = INVALID_SOCKET;
 	}
 	// 释放资源
 	~_PER_HANDLE_DATA()
@@ -234,8 +236,8 @@ public:
 				m_hIOCompletionPort(INVALID_HANDLE_VALUE),
 				m_phWorkerThreadArray(NULL),
 				m_ListenSockInfo(NULL),
-				fnAcceptEx(NULL),
-				fnGetAcceptExSockAddrs(NULL),
+				m_lpfnAcceptEx(NULL),
+				m_lpfnGetAcceptExSockAddrs(NULL),
 				m_nThreads(0)
 	{
 		if (_LoadSocketLib() == true)
@@ -250,7 +252,6 @@ public:
 	{
 		_Deinitialize();
 	}
-public:
 	// 开启服务器
 	// 根据serveroption判断accept()/acceptEX()工作模式
 	bool StartServer(bool serveroption = false);
@@ -309,7 +310,7 @@ private:
 	bool _DoSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 
 	// 投递I/O请求
-	bool _PostAccept(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
+	bool _PostAccept(PER_IO_DATA *pid);
 	bool _PostRecv(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 	bool _PostSend(PER_HANDLE_DATA* phd, PER_IO_DATA *pid);
 
@@ -330,10 +331,10 @@ protected:
 
 	PER_HANDLE_DATA               *m_ListenSockInfo;			// 服务器监听Context
 
-	LPFN_ACCEPTEX				  fnAcceptEx;					// AcceptEx函数指针
-	LPFN_GETACCEPTEXSOCKADDRS	  fnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针
+	LPFN_ACCEPTEX				  m_lpfnAcceptEx;					// AcceptEx函数指针
+	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针
 
-	WinSocket					  m_ServerSock;				    // 服务器socket信息
+	WinSock  					  m_ServerSock;				    // 服务器socket信息
 
 	int							  m_nThreads;				    // 工作线程数量
 };

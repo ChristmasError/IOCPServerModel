@@ -24,7 +24,7 @@
     <ClCompile Include="IOCP_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="备份 4.17.cpp">
+    <ClCompile Include="WinSock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,13 +35,8 @@
     <ClInclude Include="IOCPModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="备份 4.10.cpp">
-      <Filter>源文件</Filter>
-    </None>
-    <None Include="备份 4.14.cpp">
-      <Filter>源文件</Filter>
-    </None>
+    <ClInclude Include="WinSock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
