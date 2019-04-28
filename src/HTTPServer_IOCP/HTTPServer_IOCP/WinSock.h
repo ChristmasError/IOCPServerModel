@@ -9,7 +9,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #define socklen_t int
 
-class WinSock
+class  WinSock
 {
 public:
 	WinSock();
@@ -26,7 +26,7 @@ public:
 	int			Send(const char* buf, int sendsize);
 	void		Close();
 	bool		SetBlock(bool isblock);
-	void        GetLocalIP();
+	char*       GetLocalIP();
 
 	int					socket;
 	SOCKADDR_IN         addr;

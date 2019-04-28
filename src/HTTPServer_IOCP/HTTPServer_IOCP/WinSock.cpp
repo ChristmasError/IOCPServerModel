@@ -1,11 +1,12 @@
-#include<WinSock.h>
+#pragma once
+#include"WinSock.h"
 WinSock::WinSock()
 {
 	// 初始化
-	socket=0;
+	socket = 0;
 	addr = { 0 };
-	ip=NULL;
-	port=0;
+	ip = NULL;
+	port = 0;
 }
 /////////////////////////////////////////////////////////////////
 // 加载&卸载WinSocket库
@@ -18,7 +19,7 @@ bool WinSock::LoadSocketLib()
 		this->_ShowMessage("初始化WinSock 2.2 失败！\n");
 		return false;
 	}
-	else 
+	else
 		return true;
 }
 void WinSock::UnloadSocketLib()
@@ -26,7 +27,7 @@ void WinSock::UnloadSocketLib()
 	WSACleanup();
 }
 
-void WinSock::GetLocalIP()
+char* WinSock::GetLocalIP()
 {
 	//  存放主机名的缓冲区
 	char szHost[256];
@@ -44,6 +45,7 @@ void WinSock::GetLocalIP()
 	//memcpy(&addr.S_un.S_addr, p, pHost->h_length);
 	ip = inet_ntoa(addr);
 	printf("本地IP : %s\n", ip);
+	return ip;
 }
 int WinSock::CreateSocket()
 {
@@ -56,7 +58,7 @@ int WinSock::CreateSocket()
 int WinSock::CreateWSASocket()
 {
 	GetLocalIP();
-	socket= ::WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	socket = ::WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == socket)
 		this->_ShowMessage("创建WSAsocket失败！\n");
 	return socket;
@@ -72,8 +74,8 @@ bool WinSock::Bind(unsigned short port)
 	}
 	//创建端口成功后
 	struct sockaddr_in saddr;
-	saddr.sin_family	  = AF_INET;
-	saddr.sin_port		  = htons(port);
+	saddr.sin_family = AF_INET;
+	saddr.sin_port = htons(port);
 	saddr.sin_addr.s_addr = (inet_addr(ip));
 	//绑定
 	if (::bind(socket, (sockaddr*)&saddr, sizeof(saddr)) != 0)
@@ -144,7 +146,7 @@ bool WinSock::Connect(const char* ip, unsigned short port, int timeout)
 	saddr.sin_family = AF_INET;
 	saddr.sin_port = htons(port);
 	saddr.sin_addr.s_addr = inet_addr(ip);
-	SetBlock(false);
+
 	fd_set set;
 	if (connect(socket, (sockaddr*)&saddr, sizeof(saddr)) != 0)
 	{
@@ -160,7 +162,7 @@ bool WinSock::Connect(const char* ip, unsigned short port, int timeout)
 			return false;
 		}
 	}
-	SetBlock(true);
+
 	printf("连接 %s : %d 成功!\n", ip, port);
 	return true;
 }

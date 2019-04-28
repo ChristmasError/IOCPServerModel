@@ -23,7 +23,7 @@ class HTTPServer :public IOCPModel
 		string head = res.GetHead();
 		
 		// Í¶µÝSEND£¬·¢ËÍÍ·
-		strcpy(IoInfo->m_buffer, head.c_str());
+		strcpy_s(IoInfo->m_buffer, head.c_str());
 		IoInfo->m_wsaBuf.len = head.size();
 		if (PostSend(SocketInfo,IoInfo)==false)
 		{

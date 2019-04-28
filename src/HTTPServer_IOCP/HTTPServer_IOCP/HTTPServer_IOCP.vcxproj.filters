@@ -18,13 +18,13 @@
     <ClCompile Include="IOCPModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="WinSock.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="HttpResponse.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="HTTPServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="WinSock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +32,10 @@
     <ClInclude Include="IOCPModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="WinSock.h">
+    <ClInclude Include="HttpResponse.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="HttpResponse.h">
+    <ClInclude Include="WinSock.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
