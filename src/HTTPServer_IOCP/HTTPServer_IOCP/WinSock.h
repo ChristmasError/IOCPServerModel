@@ -1,4 +1,4 @@
-//#pragma once
+#pragma once
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 
 #pragma warning(disable : 4996) 
@@ -16,6 +16,7 @@ public:
 	virtual ~WinSock();
 
 	bool		LoadSocketLib();
+	void		UnloadSocketLib();
 	int			CreateSocket();
 	int  		CreateWSASocket();
 	bool		Bind(unsigned short port);
@@ -31,7 +32,6 @@ public:
 	SOCKADDR_IN         addr;
 	char*				ip;
 	unsigned short		port;
-	WSADATA				wsaData;
 private:
 	void _ShowMessage(const char* ch, ...) const;
 };

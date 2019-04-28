@@ -2,11 +2,16 @@
 WinSock::WinSock()
 {
 	// 初始化
+	socket=0;
+	addr = { 0 };
+	ip=NULL;
+	port=0;
 }
 /////////////////////////////////////////////////////////////////
-// 加载WinSocket库
+// 加载&卸载WinSocket库
 bool WinSock::LoadSocketLib()
 {
+	WSADATA wsaData;
 	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (NO_ERROR != nResult)
 	{
@@ -16,6 +21,11 @@ bool WinSock::LoadSocketLib()
 	else 
 		return true;
 }
+void WinSock::UnloadSocketLib()
+{
+	WSACleanup();
+}
+
 void WinSock::GetLocalIP()
 {
 	//  存放主机名的缓冲区

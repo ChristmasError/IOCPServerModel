@@ -126,7 +126,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="IOCPModel.cpp" />
-    <ClCompile Include="IOCP_main.cpp" />
+    <ClCompile Include="HTTPServer.cpp" />
     <ClCompile Include="WinSock.cpp" />
     <ClCompile Include="HttpResponse.cpp" />
   </ItemGroup>

@@ -7,15 +7,15 @@
 #include<MSWSock.h>
 #include<vector>
 #include<list>
+#include<thread>
 #include<iostream>
 
 // 服务器运行状态
 #define RUNNING true
 #define STOP    false
-#define EX      true
 
 // DATABUF默认大小
-#define BUF_SIZE 1024
+#define BUF_SIZE 102400
 // 传递给Worker线程的退出信号
 #define WORK_THREADS_EXIT NULL
 // 同时投递的Accept数量
@@ -63,7 +63,7 @@ typedef enum _OPERATION_TYPE
 //				单IO数据结构体定义(用于每一个重叠操作的参数)
 //
 //====================================================================================
-typedef struct _PER_IO_DATA
+typedef struct _PER_IO_CONTEXT
 {
 	WSAOVERLAPPED	m_Overlapped;					// OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
 	SOCKET			m_AcceptSocket;					// 此IO操作对应的socket
@@ -72,7 +72,7 @@ typedef struct _PER_IO_DATA
 	OPERATION_TYPE  m_OpType;						// 标志位
 
 	// 初始化
-	_PER_IO_DATA()
+	_PER_IO_CONTEXT()
 	{
 		ZeroMemory(&(m_Overlapped), sizeof(WSAOVERLAPPED));
 		ZeroMemory(m_buffer, BUF_SIZE);
@@ -82,7 +82,7 @@ typedef struct _PER_IO_DATA
 		m_OpType = NULL_POSTED;
 	}
 	// 释放
-	~_PER_IO_DATA()
+	~_PER_IO_CONTEXT()
 	{
 
 	}
@@ -98,14 +98,14 @@ typedef struct _PER_IO_DATA
 		ZeroMemory(m_buffer, BUF_SIZE);
 	}
 
-} PER_IO_DATA, *LPPER_IO_DATA;
+} PER_IO_CONTEXT, *LPPER_IO_CONTEXT;
 //========================================================
 // IOContextPool
 //========================================================
 class IOContextPool
 {
 private:
-	list<PER_IO_DATA *> contextList;
+	list<LPPER_IO_CONTEXT> contextList;
 	CRITICAL_SECTION csLock;
 
 public:
@@ -117,7 +117,7 @@ public:
 		EnterCriticalSection(&csLock);
 		for (size_t i = 0; i < INIT_IOCONTEXT_NUM; i++)
 		{
-			PER_IO_DATA *context = new PER_IO_DATA;
+			LPPER_IO_CONTEXT context = new PER_IO_CONTEXT;
 			contextList.push_back(context);
 		}
 		LeaveCriticalSection(&csLock);
@@ -127,7 +127,7 @@ public:
 	~IOContextPool()
 	{
 		EnterCriticalSection(&csLock);
-		for (list<PER_IO_DATA *>::iterator it = contextList.begin(); it != contextList.end(); it++)
+		for (list<LPPER_IO_CONTEXT>::iterator it = contextList.begin(); it != contextList.end(); it++)
 		{
 			delete (*it);
 		}
@@ -138,9 +138,9 @@ public:
 	}
 
 	// 分配一个IOContxt
-	PER_IO_DATA *AllocateIoContext()
+	LPPER_IO_CONTEXT AllocateIoContext()
 	{
-		PER_IO_DATA *context = NULL;
+		LPPER_IO_CONTEXT context = NULL;
 
 		EnterCriticalSection(&csLock);
 		if (contextList.size() > 0) //list不为空，从list中取一个
@@ -150,7 +150,7 @@ public:
 		}
 		else	//list为空，新建一个
 		{
-			context = new PER_IO_DATA;
+			context = new PER_IO_CONTEXT;
 		}
 		LeaveCriticalSection(&csLock);
 
@@ -158,7 +158,7 @@ public:
 	}
 
 	// 回收一个IOContxt
-	void ReleaseIOContext(PER_IO_DATA *pContext)
+	void ReleaseIOContext(LPPER_IO_CONTEXT pContext)
 	{
 		pContext->Reset();
 		EnterCriticalSection(&csLock);
@@ -171,29 +171,28 @@ public:
 //				单句柄数据结构体定义(用于每一个完成端口，也就是每一个Socket的参数)
 //
 //====================================================================================
-typedef struct _PER_SOCKET_DATA
+typedef struct _PER_SOCKET_CONTEXT
 {	
 private:
-	vector<PER_IO_DATA*>	arrIoContext;		  // 同一个socket上的多个IO请求
-	static IOContextPool    ioContextPool;		  //空闲的IOcontext池子
-	//vector<PER_IO_DATA*>    m_vecIoContex;	  //每个socket接收到的所有IO请求数组
+	vector<LPPER_IO_CONTEXT>	arrIoContext;		  // 同一个socket上的多个IO请求
+	static IOContextPool		ioContextPool;		  //空闲的IOcontext池子
+
 public:
 	WinSock					m_Sock;		          //每一个socket的信息
 
 	// 初始化
-	_PER_SOCKET_DATA()
+	_PER_SOCKET_CONTEXT()
 	{
 		m_Sock.socket = INVALID_SOCKET;
 	}
 	// 释放资源
-	~_PER_SOCKET_DATA()
+	~_PER_SOCKET_CONTEXT()
 	{
 	}
-
 	// 获取一个新的IO_DATA
-	PER_IO_DATA *GetNewIOContext()
+	LPPER_IO_CONTEXT GetNewIOContext()
 	{
-		PER_IO_DATA *context = ioContextPool.AllocateIoContext();
+		LPPER_IO_CONTEXT context = ioContextPool.AllocateIoContext();
 		if (context != NULL)
 		{
 			//EnterCriticalSection(&csLock);
@@ -203,9 +202,9 @@ public:
 		return context;
 	}
 	// 从数组中移除一个指定的IoContext
-	void RemoveIOContext(PER_IO_DATA* pContext)
+	void RemoveIOContext(LPPER_IO_CONTEXT pContext)
 	{
-		for (vector<PER_IO_DATA*>::iterator it = arrIoContext.begin(); it != arrIoContext.end(); it++)
+		for (vector<LPPER_IO_CONTEXT>::iterator it = arrIoContext.begin(); it != arrIoContext.end(); it++)
 		{
 			if (pContext == *it)
 			{
@@ -220,17 +219,18 @@ public:
 		}
 	}
 
-} PER_SOCKET_DATA,*LPPER_SOCKET_DATA;
+} PER_SOCKET_CONTEXT,*LPPER_SOCKET_CONTEXT;
 
-//========================================================
-//					IOCPModel类定义
-//========================================================
+//====================================================================================
+//
+//								IOCPModel类定义
+//
+//====================================================================================
 class IOCPModel
 {
 public:
 	// 服务器内资源初始化
-	IOCPModel():m_useAcceptEx(false),
-				m_ServerRunning(STOP),
+	IOCPModel():m_ServerRunning(STOP),
 				m_hIOCompletionPort(INVALID_HANDLE_VALUE),
 				m_phWorkerThreadArray(NULL),
 				m_ListenSockInfo(NULL),
@@ -250,29 +250,29 @@ public:
 	{
 		_Deinitialize();
 	}
-	// 开启服务器
-	// 根据serveroption判断accept()/acceptEX()工作模式
-	bool StartServer(bool serveroption = false);
-	
-	// 关闭服务器
+	// 开启、关闭服务器
+	bool StartServer();
 	void StopServer();	
 
 	// 事件通知函数(派生类重载此族函数)
 	//virtual void ConnectionEstablished(PER_HANDLE_DATA *handleInfo) = 0;
 	//virtual void ConnectionClosed(PER_HANDLE_DATA *handleInfo) = 0;
 	//virtual void ConnectionError(PER_HANDLE_DATA *handleInfo, int error) = 0;
-	virtual void RecvCompleted(PER_SOCKET_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
-	//virtual void SendCompleted(PER_HANDLE_DATA *handleInfo, PER_IO_DATA *ioInfo) = 0;
+	virtual void RecvCompleted(PER_SOCKET_CONTEXT *handleInfo, LPPER_IO_CONTEXT ioInfo) = 0;
+	virtual void SendCompleted(PER_SOCKET_CONTEXT *handleInfo, LPPER_IO_CONTEXT ioInfo) = 0;
 
+	bool PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
+	{
+		return _PostSend( SocketInfo, IoInfo );
+	}
 private:
 	// 开启服务器
 	bool _Start();
-	bool _StartEX();
 
 	// 初始化服务器资源
 	// 1.初始化Winsock服务
 	// 2.初始化IOCP + 工作函数线程池
-	bool _InitializeServerResource(bool useAcceptEX);
+	bool _InitializeServerResource();
 
 	// 释放服务器资源
 	void _Deinitialize();
@@ -290,7 +290,6 @@ private:
 	bool _InitializeIOCP();
 
 	// 根据服务器工作模式，建立监听服务器套接字
-	bool _InitializeServerSocket();
 	bool _InitializeListenSocket();
 
 	// 线程函数，为IOCP请求服务工作者线程
@@ -303,21 +302,17 @@ private:
 	int _GetNumberOfProcessors();
 
 	// 处理I/O请求
-	bool _DoAccept(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
-	bool _DoRecv(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
-	bool _DoSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
+	bool _DoAccept(LPPER_IO_CONTEXT pid);
+	bool _DoRecv(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
+	bool _DoSend(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
 
 	// 投递I/O请求
-	bool _PostAccept(PER_IO_DATA *pid);
-	bool _PostRecv(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
-	bool _PostSend(PER_SOCKET_DATA* phd, PER_IO_DATA *pid);
+	bool _PostAccept(LPPER_IO_CONTEXT pid);
+	bool _PostRecv(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
+	bool _PostSend(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
 
-protected:
-	bool						  m_useAcceptEx;				// 使用acceptEX()==true || 使用accept()==false
-																
+protected:															
 	bool						  m_ServerRunning;				// 服务器运行状态判断
-
-	WSADATA						  wsaData;						// Winsock服务初始化
 
 	SYSTEM_INFO					  m_SysInfo;					// 操作系统信息
 
@@ -327,12 +322,10 @@ protected:
 
 	HANDLE						  *m_phWorkerThreadArray;       // 工作线程的句柄指针
 
-	PER_SOCKET_DATA               *m_ListenSockInfo;			// 服务器监听Context
+	PER_SOCKET_CONTEXT            *m_ListenSockInfo;			// 服务器ListenContext
 
-	LPFN_ACCEPTEX				  m_lpfnAcceptEx;					// AcceptEx函数指针
-	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;		// GetAcceptExSockAddrs()函数指针
-
-	WinSock  					  m_ServerSock;				    // 服务器socket信息
+	LPFN_ACCEPTEX				  m_lpfnAcceptEx;				// AcceptEx函数指针
+	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;	// GetAcceptExSockAddrs()函数指针
 
 	int							  m_nThreads;				    // 工作线程数量
 };
