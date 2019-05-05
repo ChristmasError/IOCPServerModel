@@ -125,15 +125,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="io_context_struct.cpp" />
     <ClCompile Include="IOCPModel.cpp" />
-    <ClCompile Include="HTTPServer.cpp" />
-    <ClCompile Include="HttpResponse.cpp" />
-    <ClCompile Include="WinSock.cpp" />
+    <ClCompile Include="http_server_main.cpp" />
+    <ClCompile Include="http_response_class.cpp" />
+    <ClCompile Include="memory_pool_class.cpp" />
+    <ClCompile Include="operation_type_enum.cpp" />
+    <ClCompile Include="socket_context_struct.cpp" />
+    <ClCompile Include="winsock_class.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IOCPModel.h" />
-    <ClInclude Include="HttpResponse.h" />
-    <ClInclude Include="WinSock.h" />
+    <ClInclude Include="http_response_class.h" />
+    <ClInclude Include="memory_pool_class.h" />
+    <ClInclude Include="socket_context_pool_class.h" />
+    <ClInclude Include="winsock_class.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

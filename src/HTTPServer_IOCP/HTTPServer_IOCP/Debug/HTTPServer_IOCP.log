@@ -1,5 +1,24 @@
 ﻿  IOCPModel.cpp
-d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\iocpmodel.cpp(91): warning C4018: “<”: 有符号/无符号不匹配
-d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\iocpmodel.cpp(21): warning C4715: “IOCPModel::StartServer”: 不是所有的控件路径都返回值
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\iocpmodel.cpp(103): warning C4018: “<”: 有符号/无符号不匹配
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.h(44): warning C4624: “MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_”: 已将析构函数隐式定义为“已删除”
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.cpp(30): note: 参见对正在编译的 类 模板 实例化 "MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_" 的引用
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.cpp(26): note: 编译 类 模板 成员函数 "MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept" 时
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\socket_context_pool_class.h(15): note: 参见对正在编译的函数 模板 实例化“MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept”的引用
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\socket_context_pool_class.h(11): note: 参见对正在编译的 类 模板 实例化 "MemoryPool<_PER_SOCKET_CONTEXT,102400>" 的引用
+  http_response_class.cpp
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\http_response_class.cpp(54): warning C4018: “<”: 有符号/无符号不匹配
+  http_server_main.cpp
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\http_server_main.cpp(40): warning C4101: “buf”: 未引用的局部变量
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.h(44): warning C4624: “MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_”: 已将析构函数隐式定义为“已删除”
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.cpp(30): note: 参见对正在编译的 类 模板 实例化 "MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_" 的引用
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\memory_pool_class.cpp(26): note: 编译 类 模板 成员函数 "MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept" 时
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\socket_context_pool_class.h(15): note: 参见对正在编译的函数 模板 实例化“MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept”的引用
+  d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\socket_context_pool_class.h(11): note: 参见对正在编译的 类 模板 实例化 "MemoryPool<_PER_SOCKET_CONTEXT,102400>" 的引用
+  io_context_struct.cpp
+  operation_type_enum.cpp
+  socket_context_struct.cpp
+  winsock_class.cpp
+  正在生成代码...
+d:\github local repository\iocp-httpserver\src\httpserver_iocp\httpserver_iocp\iocpmodel.cpp(33): warning C4715: “IOCPModel::StartServer”: 不是所有的控件路径都返回值
 LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/FORCE”规范)
   HTTPServer_IOCP.vcxproj -> D:\Github local repository\IOCP-HTTPServer\src\HTTPServer_IOCP\HTTPServer_IOCP\..\..\..\bin\HTTPServer_IOCP.exe

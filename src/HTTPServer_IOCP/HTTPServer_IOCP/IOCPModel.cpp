@@ -1,7 +1,19 @@
+#pragma once
+
 #include <IOCPModel.h>
 #include <mstcpip.h>
 
-IOContextPool _PER_SOCKET_CONTEXT::ioContextPool;		// static成员初始化
+// 传递给Worker线程的退出信号
+#define WORK_THREADS_EXIT NULL
+// 同时投递的Accept数量
+#define MAX_POST_ACCEPT (500)				
+// 默认端口
+#define DEFAULT_PORT 8888
+// 退出标志
+#define EXIT_CODE (-1)
+
+IOContextPool _PER_SOCKET_CONTEXT::ioContextPool;
+SocketContextPool IOCPModel::m_ServerPool;			
 
 /////////////////////////////////////////////////////////////////
 // 初始化资源,启动服务器相关
@@ -416,7 +428,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	m_lpfnGetAcceptExSockAddrs(IoInfo->m_wsaBuf.buf, 0, localAddrLen, clientAddrLen, (LPSOCKADDR *)&localAddr, &localAddrLen, (LPSOCKADDR *)&clientAddr, &clientAddrLen);
 
 	// 2. 每一个客户端连入，就为新连接建立一个SocketContext 
-	LPPER_SOCKET_CONTEXT pNewSocketInfo = new PER_SOCKET_CONTEXT;
+	LPPER_SOCKET_CONTEXT pNewSocketInfo = m_ServerPool.newSocketContext();
 	pNewSocketInfo->m_Sock.socket	 = IoInfo->m_AcceptSocket;
 	memcpy(&(pNewSocketInfo->m_Sock.addr), clientAddr, sizeof(SOCKADDR_IN));
 

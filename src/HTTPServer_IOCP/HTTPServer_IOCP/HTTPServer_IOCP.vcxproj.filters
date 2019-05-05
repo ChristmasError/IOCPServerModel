@@ -18,13 +18,25 @@
     <ClCompile Include="IOCPModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="HttpResponse.cpp">
+    <ClCompile Include="io_context_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="HTTPServer.cpp">
+    <ClCompile Include="socket_context_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="WinSock.cpp">
+    <ClCompile Include="memory_pool_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="http_response_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="winsock_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="operation_type_enum.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="http_server_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +44,16 @@
     <ClInclude Include="IOCPModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="HttpResponse.h">
+    <ClInclude Include="socket_context_pool_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="WinSock.h">
+    <ClInclude Include="http_response_class.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="winsock_class.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="memory_pool_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
