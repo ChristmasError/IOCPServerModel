@@ -2,7 +2,7 @@
 
 #include<io_context_struct.cpp>
 #include<winsock_class.h>
-
+#include<io_context_pool_class.cpp>
 #include<vector>
 
 //====================================================================================
@@ -10,12 +10,14 @@
 //				单句柄数据结构体定义(用于每一个完成端口，也就是每一个Socket的参数)
 //
 //====================================================================================
+
 typedef struct _PER_SOCKET_CONTEXT
 {
 private:
-	std::vector<LPPER_IO_CONTEXT>	arrIoContext;		  // 同一个socket上的多个IO请求
-	static IOContextPool			ioContextPool;		  //空闲的IOcontext池子
-
+	static IOContextPool			 ioContextPool;		  // 空闲的IOcontext池
+private:
+	std::vector<LPPER_IO_CONTEXT>	 arrIoContext;		  // 同一个socket上的多个IO请求
+	CRITICAL_SECTION				 csLock;
 public:
 	WinSock		m_Sock;		//每一个socket的信息
 
@@ -27,6 +29,15 @@ public:
 	// 释放资源
 	~_PER_SOCKET_CONTEXT()
 	{
+		for (auto it : arrIoContext)
+		{
+			ioContextPool.ReleaseIOContext(it);
+		}
+		EnterCriticalSection(&csLock);
+		arrIoContext.clear();
+		LeaveCriticalSection(&csLock);
+
+		DeleteCriticalSection(&csLock);
 	}
 	// 获取一个新的IO_DATA
 	LPPER_IO_CONTEXT GetNewIOContext()
@@ -34,9 +45,9 @@ public:
 		LPPER_IO_CONTEXT context = ioContextPool.AllocateIoContext();
 		if (context != NULL)
 		{
-			//EnterCriticalSection(&csLock);
+			EnterCriticalSection(&csLock);
 			arrIoContext.push_back(context);
-			//LeaveCriticalSection(&csLock);
+			LeaveCriticalSection(&csLock);
 		}
 		return context;
 	}
@@ -49,9 +60,9 @@ public:
 			{
 				ioContextPool.ReleaseIOContext(*it);
 
-				//EnterCriticalSection(&csLock);
+				EnterCriticalSection(&csLock);
 				arrIoContext.erase(it);
-				//LeaveCriticalSection(&csLock);
+				LeaveCriticalSection(&csLock);
 
 				break;
 			}

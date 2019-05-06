@@ -79,7 +79,7 @@ class HTTPServer :public IOCPModel
 	// 重载SendCompleted()
 	void SendCompleted(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
 	{
-		std::cout << "发送数据成功！\n";
+		std::cout << "发送数据成功!\n";
 		return;
 	}
 };

@@ -5,41 +5,29 @@
 #include<socket_context_struct.cpp>
 #include<iostream>
 
+//========================================================
+//                 
+//		  SocketContextPool，单例SocketContext池
+//
+//========================================================
+
 class SocketContextPool
 {
 private:
 	MemoryPool<_PER_SOCKET_CONTEXT, 102400> SocketPool;
 	unsigned int nConnectionSocket;
+
 	CRITICAL_SECTION csLock;
 public:
-	SocketContextPool()
-	{
-		InitializeCriticalSection(&csLock);
-		nConnectionSocket = 0;
-		std::cout << "SocketContert 构造完成！\n";
-	}
-	~SocketContextPool()
-	{
-		EnterCriticalSection(&csLock);
+	SocketContextPool();
+	~SocketContextPool();
 
-		LeaveCriticalSection(&csLock);
-	}
+	// 分配一个新的SocketContext
+	LPPER_SOCKET_CONTEXT AllocateSocketContext();
 
-	LPPER_SOCKET_CONTEXT newSocketContext()
-	{
-		EnterCriticalSection(&csLock);
-		LPPER_SOCKET_CONTEXT psocket = SocketPool.newElement();
-		nConnectionSocket++;
-		LeaveCriticalSection(&csLock);
+	// 回收一个SocketContext
+	void ReleaseSocketContext(LPPER_SOCKET_CONTEXT pSocket);
 
-		return psocket;
-	}
-	void deleteSocketContext(LPPER_SOCKET_CONTEXT psocket)
-	{
-		EnterCriticalSection(&csLock);
-		SocketPool.deleteElement(psocket);
-		nConnectionSocket--;
-		LeaveCriticalSection(&csLock);
-	}
-
+	// 正在处于连接状态的SocketContext数量
+	unsigned int NumOfConnectingServer();
 };

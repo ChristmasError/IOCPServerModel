@@ -3,6 +3,13 @@
 #include<climits>
 #include<cstddef>
 
+//========================================================
+//                 
+//						 ÄÚ´æ³Ø
+//
+//========================================================
+
+
 template<typename T, size_t Blocksize = 4096>
 class MemoryPool
 {

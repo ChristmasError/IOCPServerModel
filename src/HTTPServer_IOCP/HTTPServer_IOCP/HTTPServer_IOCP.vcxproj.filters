@@ -39,6 +39,12 @@
     <ClCompile Include="http_server_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="io_context_pool_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="socket_context_pool_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IOCPModel.h">
@@ -54,6 +60,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="memory_pool_class.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="io_context_pool_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

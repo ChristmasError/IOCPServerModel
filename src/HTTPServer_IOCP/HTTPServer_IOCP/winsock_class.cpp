@@ -18,7 +18,7 @@ bool WinSock::LoadSocketLib()
 	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (NO_ERROR != nResult)
 	{
-		this->_ShowMessage("初始化WinSock 2.2 失败！\n");
+		this->_ShowMessage("初始化WinSock 2.2 失败!\n");
 		return false;
 	}
 	else
@@ -54,7 +54,7 @@ int WinSock::CreateSocket()
 	GetLocalIP();
 	socket = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (INVALID_SOCKET == socket)
-		std::cout << "创建socket失败！\n";
+		std::cout << "创建socket失败!\n";
 	return socket;
 }
 int WinSock::CreateWSASocket()
@@ -62,7 +62,7 @@ int WinSock::CreateWSASocket()
 	GetLocalIP();
 	socket = ::WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == socket)
-		this->_ShowMessage("创建WSAsocket失败！\n");
+		this->_ShowMessage("创建WSAsocket失败!\n");
 	return socket;
 }
 
@@ -172,7 +172,7 @@ void WinSock::Close()
 {
 	if (socket <= 0)
 		return;
-	std::cout << "连接关闭！ \n";
+	std::cout << "连接关闭! \n";
 	closesocket(socket);
 }
 WinSock::~WinSock()

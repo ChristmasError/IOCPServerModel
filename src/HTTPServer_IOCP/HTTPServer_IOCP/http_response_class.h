@@ -1,12 +1,12 @@
 #pragma once
 
 #include<string>
-using namespace std;
+
 class HttpResponse
 {
 public:
-	bool SetRequest(string request);
-	string GetHead();
+	bool SetRequest(std::string request);
+	std::string GetHead();
 	int Read(char *buf, int bufsize);
 	HttpResponse();
 	~HttpResponse();

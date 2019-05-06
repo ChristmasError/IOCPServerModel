@@ -6,7 +6,6 @@
 #include<socket_context_struct.cpp>
 #include<socket_context_pool_class.h>
 
-#include<Windows.h>
 #include<MSWSock.h>
 
 
@@ -14,15 +13,6 @@
 #define RUNNING true
 #define STOP    false
 
-// 释放句柄
-inline void RELEASE_HANDLE(HANDLE handle)
-{
-	if ( handle != NULL && handle != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(handle);
-		handle = NULL;
-	}
-}
 // 释放指针
 inline void RELEASE_POINT(void* point)
 {
@@ -30,6 +20,15 @@ inline void RELEASE_POINT(void* point)
 	{
 		delete point;
 		point = NULL;
+	}
+}
+// 释放句柄
+inline void RELEASE_HANDLE(HANDLE handle)
+{
+	if (handle != NULL && handle != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(handle);
+		handle = NULL;
 	}
 }
 
@@ -51,7 +50,7 @@ public:
 				m_nThreads(0)
 	{
 		if (_LoadSocketLib() == true)
-			this->_ShowMessage("加载Winsock库成功！\n");
+			this->_ShowMessage("初始化WinSock 2.2成功!\n");
 		else
 			// 加载失败 抛出异常
 		// 初始化退出线程事件
@@ -76,6 +75,11 @@ public:
 	bool PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
 	{
 		return _PostSend( SocketInfo, IoInfo );
+	}
+
+	static unsigned int NumOfConnectingServer()
+	{
+		return m_ServerSocketPool.NumOfConnectingServer();
 	}
 private:
 	// 开启服务器
@@ -141,6 +145,6 @@ protected:
 
 	int							  m_nThreads;				    // 工作线程数量
 
-	static SocketContextPool      m_ServerPool;					// 连入客户端的内存池
+	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
 };
 
