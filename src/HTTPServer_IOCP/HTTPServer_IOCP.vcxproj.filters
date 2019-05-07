@@ -18,12 +18,6 @@
     <ClCompile Include="IOCPModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="io_context_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="socket_context_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="memory_pool_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -43,6 +37,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="socket_context_pool_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="per_io_context_struct.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="per_socket_context_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -126,14 +126,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="io_context_pool_class.cpp" />
-    <ClCompile Include="io_context_struct.cpp" />
+    <ClCompile Include="per_io_context_struct.cpp" />
     <ClCompile Include="IOCPModel.cpp" />
     <ClCompile Include="http_server_main.cpp" />
     <ClCompile Include="http_response_class.cpp" />
     <ClCompile Include="memory_pool_class.cpp" />
     <ClCompile Include="operation_type_enum.cpp" />
     <ClCompile Include="socket_context_pool_class.cpp" />
-    <ClCompile Include="socket_context_struct.cpp" />
+    <ClCompile Include="per_socket_context_struct.cpp" />
     <ClCompile Include="winsock_class.cpp" />
   </ItemGroup>
   <ItemGroup>

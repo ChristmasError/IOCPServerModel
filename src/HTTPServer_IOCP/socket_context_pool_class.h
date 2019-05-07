@@ -2,7 +2,7 @@
 
 #include<memory_pool_class.h>
 #include<memory_pool_class.cpp>
-#include<socket_context_struct.cpp>
+#include<per_socket_context_struct.cpp>
 #include<iostream>
 
 //========================================================

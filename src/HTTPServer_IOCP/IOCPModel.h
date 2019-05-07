@@ -2,8 +2,8 @@
 
 #include<winsock_class.h>		//封装好的socket类库,项目中需加载其dll位置在首目录的lib文件夹中
 #include<http_response_class.h>
-#include<io_context_struct.cpp>
-#include<socket_context_struct.cpp>
+#include<per_io_context_struct.cpp>
+#include<per_socket_context_struct.cpp>
 #include<socket_context_pool_class.h>
 
 #include<MSWSock.h>
