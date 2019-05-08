@@ -30,9 +30,6 @@
     <ClCompile Include="operation_type_enum.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="http_server_main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="io_context_pool_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -43,6 +40,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="per_socket_context_struct.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HTTP_server_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

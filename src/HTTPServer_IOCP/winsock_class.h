@@ -26,11 +26,11 @@ public:
 	int			Send(const char* buf, int sendsize);
 	void		Close();
 	bool		SetBlock(bool isblock);
-	char*       GetLocalIP();
+	const char*       GetLocalIP();
 
 	int					socket;
 	SOCKADDR_IN         addr;
-	char*				ip;
+	const char*			ip;
 	unsigned short		port;
 private:
 	void _ShowMessage(const char* ch, ...) const;

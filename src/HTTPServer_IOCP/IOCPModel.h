@@ -41,29 +41,15 @@ class IOCPModel
 {
 public:
 	// 服务器内资源初始化
-	IOCPModel():m_ServerRunning(STOP),
-				m_hIOCompletionPort(INVALID_HANDLE_VALUE),
-				m_phWorkerThreadArray(NULL),
-				m_ListenSockInfo(NULL),
-				m_lpfnAcceptEx(NULL),
-				m_lpfnGetAcceptExSockAddrs(NULL),
-				m_nThreads(0)
-	{
-		if (_LoadSocketLib() == true)
-			this->_ShowMessage("初始化WinSock 2.2成功!\n");
-		else
-			// 加载失败 抛出异常
-		// 初始化退出线程事件
-		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-	}
-	~IOCPModel()
-	{
-		_Deinitialize();
-	}
+	IOCPModel();
+	~IOCPModel();
+	
 	// 开启、关闭服务器
 	bool StartServer();
 	void StopServer();	
+
+	// 打印本地(服务器)ip地址
+	const char* GetLocalIP();
 
 	// 事件通知函数(派生类重载此族函数)
 	//virtual void ConnectionEstablished(PER_HANDLE_DATA *handleInfo) = 0;
@@ -116,6 +102,9 @@ private:
 
 	// 获得本机中处理器的数量
 	int _GetNumberOfProcessors();
+
+	// 获取本地(服务器)IP
+	const char* _GetLocalIP();
 
 	// 处理I/O请求
 	bool _DoAccept(LPPER_IO_CONTEXT pid);

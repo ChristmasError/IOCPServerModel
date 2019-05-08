@@ -29,7 +29,7 @@ void WinSock::UnloadSocketLib()
 	WSACleanup();
 }
 
-char* WinSock::GetLocalIP()
+const char* WinSock::GetLocalIP()
 {
 	//  存放主机名的缓冲区
 	char szHost[256];
@@ -46,12 +46,13 @@ char* WinSock::GetLocalIP()
 	memmove(&addr, p, 4);
 	//memcpy(&addr.S_un.S_addr, p, pHost->h_length);
 	ip = inet_ntoa(addr);
-	printf("本地IP : %s\n", ip);
+
 	return ip;
 }
 int WinSock::CreateSocket()
 {
-	GetLocalIP();
+	if(ip == NULL)
+		GetLocalIP();
 	socket = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (INVALID_SOCKET == socket)
 		std::cout << "创建socket失败!\n";
@@ -59,7 +60,8 @@ int WinSock::CreateSocket()
 }
 int WinSock::CreateWSASocket()
 {
-	GetLocalIP();
+	if (ip == NULL)
+		GetLocalIP();
 	socket = ::WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == socket)
 		this->_ShowMessage("创建WSAsocket失败!\n");
@@ -68,7 +70,6 @@ int WinSock::CreateWSASocket()
 
 bool WinSock::Bind(unsigned short port)
 {
-	GetLocalIP();
 	if (socket == INVALID_SOCKET)
 	{
 		std::cerr << "INVALID_SOCKET!\n";

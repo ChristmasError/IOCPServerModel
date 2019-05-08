@@ -16,6 +16,41 @@ IOContextPool _PER_SOCKET_CONTEXT::ioContextPool;
 SocketContextPool IOCPModel::m_ServerSocketPool;
 
 /////////////////////////////////////////////////////////////////
+// 构造&析构
+IOCPModel::IOCPModel() :
+	m_ServerRunning(STOP),
+	m_hIOCompletionPort(INVALID_HANDLE_VALUE),
+	m_phWorkerThreadArray(NULL),
+	m_ListenSockInfo(NULL),
+	m_lpfnAcceptEx(NULL),
+	m_lpfnGetAcceptExSockAddrs(NULL),
+	m_nThreads(0)
+{
+	if (_LoadSocketLib() == true)
+		this->_ShowMessage("初始化WinSock 2.2成功!\n");
+	else
+		// 加载失败 抛出异常
+		// 初始化退出线程事件
+		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+}
+IOCPModel::~IOCPModel()
+{
+	_Deinitialize();
+}
+
+/////////////////////////////////////////////////////////////////
+// 获取本地(服务器)IP
+const char* IOCPModel::GetLocalIP()
+{
+	return _GetLocalIP();
+}
+const char* IOCPModel::_GetLocalIP()
+{
+	return m_ListenSockInfo->m_Sock.GetLocalIP();
+}
+
+/////////////////////////////////////////////////////////////////
 // 初始化资源,启动服务器相关
 bool IOCPModel::StartServer()
 {
@@ -35,7 +70,8 @@ bool IOCPModel::StartServer()
 bool IOCPModel::_Start()
 {
 	m_ServerRunning = RUNNING;
-	this->_ShowMessage("服务器已准备就绪，正在等待客户端的接入......\n");
+	printf("服务器已准备就绪:IP %s 正在等待客户端的接入......\n", GetLocalIP());
+	//this->_ShowMessage("服务器已准备就绪:IP %s，正在等待客户端的接入......\n",GetLocalIP());
 
 	while (m_ServerRunning)
 	{
@@ -124,7 +160,7 @@ bool IOCPModel::_InitializeListenSocket()
 	// 创建用于监听的 Listen Socket Context
 
 	m_ListenSockInfo = new PER_SOCKET_CONTEXT;
-	m_ListenSockInfo->m_Sock.socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	m_ListenSockInfo->m_Sock.CreateWSASocket();
 	if (INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
 	{
 		this->_ShowMessage("创建监听socket失败!\n");
