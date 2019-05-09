@@ -9,7 +9,7 @@ WinSock::WinSock()
 	addr = { 0 };
 	ip = NULL;
 	port = 0;
-}
+} 
 /////////////////////////////////////////////////////////////////
 // º”‘ÿ&–∂‘ÿWinSocketø‚
 bool WinSock::LoadSocketLib()
