@@ -70,7 +70,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\bin\</OutDir>
+    <OutDir>..\..\bin\</OutDir>
     <IncludePath>.\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
@@ -128,14 +128,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="io_context_pool_class.cpp" />
-    <ClCompile Include="per_io_context_struct.cpp" />
+    <ClCompile Include="per_io_context_struct.h" />
     <ClCompile Include="IOCPModel.cpp" />
     <ClCompile Include="HTTP_server_main.cpp" />
     <ClCompile Include="http_response_class.cpp" />
     <ClCompile Include="memory_pool_class.cpp" />
-    <ClCompile Include="operation_type_enum.cpp" />
+    <ClCompile Include="operation_type_enum.h" />
     <ClCompile Include="socket_context_pool_class.cpp" />
-    <ClCompile Include="per_socket_context_struct.cpp" />
+    <ClCompile Include="per_socket_context_struct.h" />
     <ClCompile Include="winsock_class.cpp" />
   </ItemGroup>
   <ItemGroup>

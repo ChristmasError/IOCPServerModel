@@ -27,23 +27,23 @@
     <ClCompile Include="winsock_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="operation_type_enum.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="io_context_pool_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="socket_context_pool_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="per_io_context_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="per_socket_context_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="HTTP_server_main.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="operation_type_enum.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="per_io_context_struct.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="per_socket_context_struct.h">
+      <Filter>头文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
