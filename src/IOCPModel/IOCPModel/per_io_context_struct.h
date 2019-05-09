@@ -1,8 +1,8 @@
 #pragma once
 
-#include"operation_type_enum.h"
-#include<WinSock2.h>
-#include<list>
+#include "operation_type_enum.h"
+#include <WinSock2.h>
+#include <list>
 
 // DATABUFÄ¬ÈÏ´óÐ¡
 #define BUF_SIZE 102400

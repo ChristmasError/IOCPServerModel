@@ -79,7 +79,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\..\lib\;..\..\WinSock\WinSock\;..\..\MemoryPool\MemoryPool\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\CSAutoLock;..\..\..\lib\;..\..\WinSock\WinSock\;..\..\MemoryPool\MemoryPool\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\..\..\lib\</AdditionalLibraryDirectories>

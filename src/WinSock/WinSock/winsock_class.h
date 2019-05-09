@@ -3,7 +3,7 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 
 #pragma warning(disable : 4996) 
 
-#include<winsock2.h>
+#include <winsock2.h>
 
 
 #pragma comment(lib, "ws2_32.lib")

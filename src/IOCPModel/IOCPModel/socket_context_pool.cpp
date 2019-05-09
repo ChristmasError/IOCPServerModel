@@ -4,32 +4,30 @@
 
 SocketContextPool::SocketContextPool()
 {
-	InitializeCriticalSection(&csLock);
+	CSAutoLock cs(m_csLock);
 	nConnectionSocket = 0;
 	std::cout << "SocketContertPool 初始化完成!\n";
 }
 
 SocketContextPool::~SocketContextPool()
 {
-	DeleteCriticalSection(&csLock);
+	CSAutoLock cs(m_csLock);
 }
 
 LPPER_SOCKET_CONTEXT SocketContextPool::AllocateSocketContext()
 {
-	EnterCriticalSection(&csLock);
+	CSAutoLock cs(m_csLock);
 	LPPER_SOCKET_CONTEXT psocket = SocketPool.newElement();
 	nConnectionSocket++;
-	LeaveCriticalSection(&csLock);
-
+	
 	return psocket;
 }
 
 void SocketContextPool::ReleaseSocketContext(LPPER_SOCKET_CONTEXT pSocket)
 {
-	EnterCriticalSection(&csLock);
+	CSAutoLock cs(m_csLock);
 	SocketPool.deleteElement(pSocket);
 	nConnectionSocket--;
-	LeaveCriticalSection(&csLock);
 }
 unsigned int SocketContextPool::NumOfConnectingServer()
 {

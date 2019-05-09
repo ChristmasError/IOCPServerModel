@@ -1,7 +1,7 @@
 #pragma once
 
-#include"winsock_class.h"
-#include<iostream>
+#include "winsock_class.h"
+#include <iostream>
 WinSock::WinSock()
 {
 	// ≥ı ºªØ

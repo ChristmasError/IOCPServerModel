@@ -1,6 +1,7 @@
 #pragma once
 
-#include"per_io_context_struct.h"
+#include "per_io_context_struct.h"
+#include "cs_auto_lock_class.h"
 
 //========================================================
 //                 
@@ -12,7 +13,7 @@ class IOContextPool
 {
 private:
 	std::list<LPPER_IO_CONTEXT> contextList;
-	CRITICAL_SECTION csLock;
+	CSLock m_csLock;
 
 public:
 	IOContextPool();

@@ -1,6 +1,3 @@
-﻿  http_response_class.cpp
-e:\iocpmodel——new\src\httpserver_iocp\httpserver_iocp\http_response_class.cpp(55): warning C4018: “<”: 有符号/无符号不匹配
-  http_server_main.cpp
-e:\iocpmodel——new\src\httpserver_iocp\httpserver_iocp\http_server_main.cpp(41): warning C4101: “buf”: 未引用的局部变量
-  正在生成代码...
-  HTTPServer_IOCP.vcxproj -> E:\IOCPModel——new\src\HTTPServer_IOCP\HTTPServer_IOCP\..\..\..\bin\HTTPServer_IOCP.exe
+﻿  http_server_main.cpp
+d:\github local repository\iocpmodel\src\httpserver_iocp\httpserver_iocp\http_server_main.cpp(41): warning C4101: “buf”: 未引用的局部变量
+  HTTPServer_IOCP.vcxproj -> D:\Github local repository\IOCPModel\src\HTTPServer_IOCP\HTTPServer_IOCP\..\..\..\bin\HTTPServer_IOCP.exe

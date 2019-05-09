@@ -1,9 +1,9 @@
 #pragma once
 
-#include"memory_pool_class.h"
-#include"memory_pool_class.cpp"
-#include"per_socket_context_struct.h"
-#include<iostream>
+#include "memory_pool_class.h"
+#include "memory_pool_class.cpp"
+#include "per_socket_context_struct.h"
+#include <iostream>
 
 //========================================================
 //                 
@@ -17,7 +17,7 @@ private:
 	MemoryPool<_PER_SOCKET_CONTEXT, 102400> SocketPool;
 	unsigned int nConnectionSocket;
 
-	CRITICAL_SECTION csLock;
+	CSLock m_csLock;
 public:
 	SocketContextPool();
 	~SocketContextPool();
