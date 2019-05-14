@@ -4,12 +4,13 @@
 
 class HttpResponse
 {
-public:
+public:	
+	HttpResponse();
+	~HttpResponse();
 	bool SetRequest(std::string request);
 	std::string GetHead();
 	int Read(char *buf, int bufsize);
-	HttpResponse();
-	~HttpResponse();
+
 	//private:
 	int filesize = 0;
 	FILE *fp = 0;

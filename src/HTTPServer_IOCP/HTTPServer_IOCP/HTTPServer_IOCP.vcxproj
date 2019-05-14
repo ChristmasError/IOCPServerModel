@@ -78,11 +78,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\CSAutoLock;..\..\..\lib\;..\..\WinSock\WinSock\;..\..\MemoryPool\MemoryPool\;..\..\IOCPModel\IOCPModel\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\CLog;..\..\CSAutoLock;..\..\..\lib\;..\..\WinSock\WinSock\;..\..\MemoryPool\MemoryPool\;..\..\IOCPModel\IOCPModel\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>..\..\..\lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>CSAutoLock.lib;IOCPModel.lib;MemoryPool.lib;WinSock.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>CLog.lib;CSAutoLock.lib;IOCPModel.lib;MemoryPool.lib;WinSock.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

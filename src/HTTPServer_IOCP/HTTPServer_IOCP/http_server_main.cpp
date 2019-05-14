@@ -1,8 +1,15 @@
 #include "iocp_model_class.h"
 #include "http_response_class.h"
+#include "clog_class.h"
 using namespace std;
 class HTTPServer :public IOCPModel
 {
+public:
+	HTTPServer()
+	{
+		CREATE_LOG("HTTPServerLog.log", ".\\log\\");
+	}
+private:
 	// 重载RecvCompleted()
 	void RecvCompleted(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
 	{
@@ -83,6 +90,8 @@ class HTTPServer :public IOCPModel
 		std::cout << "发送数据成功!\n";
 		return;
 	}
+
+
 };
 int main()
 {

@@ -1,0 +1,8 @@
+﻿  clog_class.cpp
+d:\github local repository\iocpmodel\src\clog\clog_class.h(16): warning C4005: “ERROR”: 宏重定义
+  d:\windows kits\10\include\10.0.17134.0\um\wingdi.h(118): note: 参见“ERROR”的前一个定义
+d:\github local repository\iocpmodel\src\clog\clog_class.cpp(142): warning C4477: “snprintf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 3 拥有了类型“__int64”
+  d:\github local repository\iocpmodel\src\clog\clog_class.cpp(142): note: 请考虑在格式字符串中使用“%lld”
+  d:\github local repository\iocpmodel\src\clog\clog_class.cpp(142): note: 请考虑在格式字符串中使用“%I64d”
+d:\github local repository\iocpmodel\src\clog\clog_class.cpp(106): warning C4101: “end”: 未引用的局部变量
+  CLog.vcxproj -> D:\Github local repository\IOCPModel\src\CLog\..\..\lib\CLog.lib
