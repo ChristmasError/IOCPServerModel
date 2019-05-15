@@ -51,18 +51,18 @@ public:
 	const char* GetLocalIP();
 
 	// 事件通知函数(派生类重载此族函数)
-	//virtual void ConnectionEstablished(PER_HANDLE_DATA *handleInfo) = 0;
-	//virtual void ConnectionClosed(PER_HANDLE_DATA *handleInfo) = 0;
-	//virtual void ConnectionError(PER_HANDLE_DATA *handleInfo, int error) = 0;
-	virtual void RecvCompleted(PER_SOCKET_CONTEXT *handleInfo, LPPER_IO_CONTEXT ioInfo) = 0;
-	virtual void SendCompleted(PER_SOCKET_CONTEXT *handleInfo, LPPER_IO_CONTEXT ioInfo) = 0;
+	virtual void ConnectionEstablished(LPPER_SOCKET_CONTEXT socketInfo) = 0;
+	virtual void ConnectionClosed(LPPER_SOCKET_CONTEXT socketInfo) = 0;
+	virtual void ConnectionError(LPPER_SOCKET_CONTEXT socketInfo, DWORD errorNum) = 0;
+	virtual void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo) = 0;
+	virtual void SendCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo) = 0;
 
 	bool PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
 	{
 		return _PostSend(SocketInfo, IoInfo);
 	}
 
-	static unsigned int NumOfConnectingServer()
+	static unsigned int GetConnectCnt()
 	{
 		return m_ServerSocketPool.NumOfConnectingServer();
 	}
@@ -92,6 +92,9 @@ private:
 
 	// 根据服务器工作模式，建立监听服务器套接字
 	bool _InitializeListenSocket();
+
+	// socket是否存活
+	bool _IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo);
 
 	// 线程函数，为IOCP请求服务工作者线程
 	static DWORD WINAPI _WorkerThread(LPVOID lpParam);

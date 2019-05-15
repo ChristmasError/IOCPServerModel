@@ -1,0 +1,32 @@
+2019-05-15 15:56:03.001339 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects: 1
+2019-05-15 15:56:03.001339 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects: 2
+2019-05-15 15:56:03.001339 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects: 2
+2019-05-15 15:56:03.001339 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects: 2
+2019-05-15 15:56:03.001341 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 15:56:03.001349 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 15:56:03.001349 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 15:56:03.001356 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 15:56:03.001356 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 15:56:03.001527 [INFO]: [Send] Send data successd, filesize:79, client ip:0.0.0.0
+2019-05-15 15:56:03.001527 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 15:56:03.001527 [INFO]: [Send] Send data successd, filesize:124, client ip:0.0.0.0
+2019-05-15 15:56:03.001536 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 15:56:03.001536 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 15:56:03.001542 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 15:56:03.001543 [INFO]: Response type:[GET] from client ip:0.0.0.0
+2019-05-15 16:23:09.005785 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 16:23:09.005785 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 16:23:09.005785 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 16:23:09.005785 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 16:23:09.005786 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0
+2019-05-15 16:23:09.005795 [INFO]: [Send] Send data successd, filesize:42486, client ip:0.0.0.0
+2019-05-15 16:23:09.005796 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0
+2019-05-15 16:23:09.005805 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 16:23:09.005805 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0
+2019-05-15 16:23:09.005942 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0
+2019-05-15 16:23:09.005950 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 16:23:09.005950 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0
+2019-05-15 16:23:09.005950 [INFO]: [Send] Send data successd, filesize:42486, client ip:0.0.0.0
+2019-05-15 16:23:09.005957 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 16:23:09.005958 [INFO]: [Send] Send data successd, filesize:67118, client ip:0.0.0.0
+2019-05-15 16:23:09.005958 [INFO]: [Recv] Complete response to [GET] request from ip:0.0.0.0

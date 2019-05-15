@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 //·ÖÎöhttpÍ·
-bool HttpResponse::SetRequest(string request)
+bool HttpResponse::SetRequest(std::string request, std::string & responseType)
 {
 	string src = request;
 	string pattern = "^([A-Z]+) /([a-zA-Z0-9]*([.][a-zA-Z]*)?)[?]?(.*) HTTP/1";
@@ -19,6 +19,7 @@ bool HttpResponse::SetRequest(string request)
 		return false;
 	}
 	string type = mas[1];
+	responseType = type;
 	string path = "/";
 	path += mas[2];
 	string filetype = mas[3];
@@ -26,12 +27,7 @@ bool HttpResponse::SetRequest(string request)
 
 	if (filetype.size()>0)
 		filetype = filetype.substr(1, filetype.size() - 1);//È¥µô¡°.¡±
-	printf("type:[%s] \npath:[%s]\nfiletype:[%s]\nquery:[%s]\n",
-		type.c_str(),
-		path.c_str(),
-		filetype.c_str(),
-		query.c_str());
-
+	
 	if (type != "GET") {
 		cerr << "Not Get!!!!!" << endl;
 		return false;
@@ -75,7 +71,7 @@ bool HttpResponse::SetRequest(string request)
 	fseek(fp, 0, SEEK_END);
 	filesize = ftell(fp);
 	fseek(fp, 0, 0);
-	printf("filesize is : %d\n", filesize);
+
 	if (filetype == "php")
 	{
 		char c = 0;

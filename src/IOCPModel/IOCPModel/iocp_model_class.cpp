@@ -32,7 +32,6 @@ IOCPModel::IOCPModel() :
 		// 加载失败 抛出异常
 		// 初始化退出线程事件
 		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 }
 IOCPModel::~IOCPModel()
 {
@@ -57,7 +56,7 @@ bool IOCPModel::StartServer()
 	// 服务器运行状态检测
 	if (m_ServerRunning)
 	{
-		_ShowMessage("服务器运行中,请勿重复运行!\n");
+		this->_ShowMessage("服务器运行中,请勿重复运行!\n");
 		return false;
 	}
 	// 初始化服务器所需资源
@@ -70,7 +69,7 @@ bool IOCPModel::StartServer()
 bool IOCPModel::_Start()
 {
 	m_ServerRunning = RUNNING;
-	printf("服务器已准备就绪:IP %s 正在等待客户端的接入......\n", GetLocalIP());
+	this->_ShowMessage("服务器已准备就绪:IP %s 正在等待客户端的接入......\n", GetLocalIP());
 	//this->_ShowMessage("服务器已准备就绪:IP %s，正在等待客户端的接入......\n",GetLocalIP());
 
 	while (m_ServerRunning)
@@ -130,7 +129,7 @@ bool IOCPModel::_InitializeIOCP()
 	// 初始化完成端口
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (NULL == m_hIOCompletionPort)
-		std::cout << "创建完成端口失败!\n";
+		this->_ShowMessage("创建完成端口失败!\n");
 
 	// 创建IO线程--线程里面创建线程池
 	// 基于处理器的核心数量创建线程
@@ -141,7 +140,7 @@ bool IOCPModel::_InitializeIOCP()
 		// 创建服务器工作器线程，并将完成端口传递到该线程
 		HANDLE hWorkThread = CreateThread(NULL, NULL, _WorkerThread, (void*)this, 0, NULL);
 		if (NULL == hWorkThread) {
-			std::cerr << "创建线程句柄失败!Error:" << GetLastError() << std::endl;
+			this->_ShowMessage("创建线程句柄失败! Error:%d\n", GetLastError());
 			system("pause");
 			return false;
 		}
@@ -182,12 +181,12 @@ bool IOCPModel::_InitializeListenSocket()
 
 	// 开始进行监听
 	if (SOCKET_ERROR == listen(m_ListenSockInfo->m_Sock.socket, SOMAXCONN)) {
-		std::cerr << "监听失败. Error: " << GetLastError() << std::endl;
+		this->_ShowMessage("监听失败. Error:%d\n", GetLastError());
 		return false;
 	}
 	else
 	{
-		printf("Listen() 完成.\n");
+		this->_ShowMessage("Listen() completed!\n");
 	}
 
 	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
@@ -205,7 +204,7 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL,
 		NULL))
 	{
-		printf("WSAIoctl 未能获取AcceptEx函数指针,错误代码: %d\n", WSAGetLastError());
+		this->_ShowMessage("WSAIoctl 未能获取AcceptEx函数指针,错误代码: %d\n", WSAGetLastError());
 		// 释放资源_Deinitialize
 		return false;
 	}
@@ -222,7 +221,7 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL,
 		NULL))
 	{
-		printf("WSAIoctl 未能获取GetAcceptExSockAddrs函数指针,错误代码: %d\n", WSAGetLastError());
+		this->_ShowMessage("WSAIoctl 未能获取GetAcceptExSockAddrs函数指针,错误代码: %d\n", WSAGetLastError());
 		// 释放资源_Deinitialize
 		return false;
 	}
@@ -237,7 +236,7 @@ bool IOCPModel::_InitializeListenSocket()
 			return false;
 		}
 	}
-	printf("投递 %d 个AcceptEx请求完毕", MAX_POST_ACCEPT);
+	this->_ShowMessage("投递 %d 个AcceptEx请求完毕", MAX_POST_ACCEPT);
 	return true;
 }
 
@@ -260,17 +259,16 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 {
 	IOCPModel* IOCP = (IOCPModel*)lpParam;
 	;
-	LPPER_SOCKET_CONTEXT handleInfo = NULL;
+	LPPER_SOCKET_CONTEXT socketInfo = NULL;
 	LPPER_IO_CONTEXT ioInfo = NULL;
 	DWORD RecvBytes = 0;
 	DWORD Flags = 0;
 
 	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCP->m_hWorkerShutdownEvent, 0))
 	{
-		bool bRet = GetQueuedCompletionStatus(IOCP->m_hIOCompletionPort, &RecvBytes, (PULONG_PTR)&(handleInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);
-		//收到退出线程标志，直接退出工作线程
-
-		if (EXIT_CODE == (DWORD)handleInfo)
+		bool bRet = GetQueuedCompletionStatus(IOCP->m_hIOCompletionPort, &RecvBytes, (PULONG_PTR)&(socketInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);
+		// 收到EXIT_CODE退出线程标志，退出工作线程
+		if (EXIT_CODE == (DWORD)socketInfo)
 		{
 			break;
 		}
@@ -282,14 +280,14 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 		if (bRet == false)
 		{
 			DWORD dwError = GetLastError();
-			// 是否超时，进入计时等待
-			if (dwError == WAIT_TIMEOUT)
+			// 超时检测，进入计时等待
+			if (WAIT_TIMEOUT == dwError)
 			{
 				// 客户端仍在活动
-				if (/*IsAlive()*/1)
+				if (IOCP->_IsSocketAlive(socketInfo))
 				{
+					IOCP->ConnectionClosed(socketInfo);
 					//ConnectionClose(handleInfo)
-					//回收socket
 					continue;
 				}
 				else
@@ -298,27 +296,24 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 				}
 			}
 			// 错误64 客户端异常退出
-			else if (dwError == ERROR_NETNAME_DELETED)
+			else if (ERROR_NETNAME_DELETED == dwError)
 			{
-				//错误回调函数
-				//iocp->ConnectionError				
-				//回收socket
+				IOCP->ConnectionError(socketInfo, dwError);
+				//ConnectionClose(handleInfo)
 			}
 			else
 			{
-				//错误回调函数
-				//iocp->ConnectionError				
-				//回收socket
+				IOCP->ConnectionError(socketInfo, dwError);
+				//ConnectionClose(handleInfo)
 			}
 		}
 		else
 		{
-			// 判断是否有客户端断开
-			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED) ||
-				(SEND_POSTED == ioInfo->m_OpType))
+			// 心跳包判断是否有客户端断开
+			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED))
 			{
+				IOCP->ConnectionClosed(socketInfo);
 				//ConnectionClose(handleInfo);
-				//回收socket
 				continue;
 			}
 			else
@@ -329,10 +324,10 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 					IOCP->_DoAccept(ioInfo);
 					break;
 				case RECV_POSTED:
-					IOCP->_DoRecv(handleInfo, ioInfo);
+					IOCP->_DoRecv(socketInfo, ioInfo);
 					break;
 				case SEND_POSTED:
-					IOCP->_DoSend(handleInfo, ioInfo);
+					IOCP->_DoSend(socketInfo, ioInfo);
 					break;
 				default:
 					break;
@@ -344,7 +339,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 
 	 // 释放线程参数
 	RELEASE_HANDLE(lpParam);
-	std::cout << "工作线程退出!" << std::endl;
+	IOCP->_ShowMessage("工作线程退出\n");
 	return 0;
 }
 
@@ -370,6 +365,17 @@ void IOCPModel::_Deinitialize()
 }
 
 ///////////////////////////////////////////////////////////////////
+// socket是否存活
+bool IOCPModel::_IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo)
+{
+	int nByteSend = socketInfo->m_Sock.Send("", 0);
+	if (nByteSend == -1)
+		return false;
+	else
+		return true;
+}
+
+///////////////////////////////////////////////////////////////////
 // 获得本机中处理器的数量
 int IOCPModel::_GetNumberOfProcessors()
 {
@@ -381,7 +387,13 @@ int IOCPModel::_GetNumberOfProcessors()
 // 打印消息
 void IOCPModel::_ShowMessage(const char* msg, ...) const
 {
-	std::cout << msg;
+	
+	va_list valist;
+	va_start(valist,msg);
+	vprintf(msg, valist);
+	//std::cout << va_arg(msg, const char*) << std::endl;
+	va_end(valist);
+
 }
 
 /////////////////////////////////////////////////////////////////
@@ -397,7 +409,7 @@ bool IOCPModel::_PostAccept(LPPER_IO_CONTEXT pAcceptIoInfo)
 	pAcceptIoInfo->m_AcceptSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == pAcceptIoInfo->m_AcceptSocket)
 	{
-		printf("创建用于Accept的Socket失败!错误代码: %d", WSAGetLastError());
+		this->_ShowMessage("创建用于Accept的Socket失败!错误代码: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -413,7 +425,7 @@ bool IOCPModel::_PostAccept(LPPER_IO_CONTEXT pAcceptIoInfo)
 	{
 		if (ERROR_IO_PENDING != WSAGetLastError())
 		{
-			printf("投递 AcceptEx 请求失败，错误代码: %d", WSAGetLastError());
+			this->_ShowMessage("投递 AcceptEx 请求失败，错误代码: %d", WSAGetLastError());
 			return false;
 		}
 	}
@@ -428,7 +440,7 @@ bool IOCPModel::_PostRecv(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoIn
 	int nBytesRecv = WSARecv(SocketInfo->m_Sock.socket, &(IoInfo->m_wsaBuf), 1, &RecvBytes, &Flags, &(IoInfo->m_Overlapped), NULL);
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		std::cout << "如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了\n";
+		this->_ShowMessage( "返回值错误，错误代码非Pending，重叠请求失效！\n");
 		return false;
 	}
 	return true;
@@ -466,11 +478,11 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	if (INVALID_SOCKET == pNewSocketInfo->m_Sock.socket)
 	{
 		m_ServerSocketPool.ReleaseSocketContext(pNewSocketInfo);
-		std::cout << "接收到的客户端Socket无效!\n";
+		this->_ShowMessage("Invalid client socket!!\n");
 		return false;
 	}
 	memcpy(&(pNewSocketInfo->m_Sock.addr), clientAddr, sizeof(SOCKADDR_IN));
-
+	pNewSocketInfo->m_Sock.ip = inet_ntoa(clientAddr->sin_addr);
 	// 3. 将新SocketContext和完成端口绑定
 	if (NULL == CreateIoCompletionPort((HANDLE)pNewSocketInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)pNewSocketInfo, 0))
 	{
@@ -488,7 +500,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	pNewIoContext->m_AcceptSocket = pNewSocketInfo->m_Sock.socket;
 	if (false == this->_PostRecv(pNewSocketInfo, pNewIoContext))
 	{
-		std::cerr << "投递首个WSARecv()失败!\n";
+		this->_ShowMessage( "post first WSARecv() failed!!\n");
 		//DoClose(sockContext);
 		return false;
 	}
@@ -499,26 +511,27 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	{
 		m_ListenSockInfo->RemoveIOContext(IoInfo);
 	}
-	//// 并设置tcp_keepalive
-	//tcp_keepalive alive_in;
-	//tcp_keepalive alive_out;
-	//alive_in.onoff = TRUE;
-	//alive_in.keepalivetime = 1000 * 60;		// 60s  多长时间（ ms ）没有数据就开始 send 心跳包
-	//alive_in.keepaliveinterval = 1000 * 10; //10s  每隔多长时间（ ms ） send 一个心跳包
-	//unsigned long ulBytesReturn = 0;
-	//if (SOCKET_ERROR == WSAIoctl(pnewSockContext->m_Sock.socket, SIO_KEEPALIVE_VALS, &alive_in, sizeof(alive_in), &alive_out, sizeof(alive_out), &ulBytesReturn, NULL, NULL))
-	//{
-	//	//TRACE(L"WSAIoctl failed: %d/n", WSAGetLastError());
-	//}
 
+	// 设置tcp_keepalive
+	tcp_keepalive alive_in;
+	tcp_keepalive alive_out;
+	alive_in.onoff = TRUE;
+	alive_in.keepalivetime = 1000 * 60;		// 60s  多长时间（ ms ）没有数据就开始 send 心跳包
+	alive_in.keepaliveinterval = 1000 * 10; //10s  每隔多长时间（ ms ） send 一个心跳包
+	unsigned long ulBytesReturn = 0;
+	if (SOCKET_ERROR == WSAIoctl(pNewSocketInfo->m_Sock.socket, SIO_KEEPALIVE_VALS, &alive_in, sizeof(alive_in), &alive_out, sizeof(alive_out), &ulBytesReturn, NULL, NULL))
+	{
+		//TRACE(L"WSAIoctl failed: %d/n", WSAGetLastError());
+	}
+	ConnectionEstablished(pNewSocketInfo);
 
-	////OnConnectionEstablished(newSockContext);
+	this->ConnectionEstablished(pNewSocketInfo);
 	return true;
 }
 
 bool IOCPModel::_DoRecv(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioInfo)
 {
-	RecvCompleted(SocketInfo, ioInfo);
+	this->RecvCompleted(SocketInfo, ioInfo);
 	// 在此socketInfo上投递新的RECV请求
 	LPPER_IO_CONTEXT pNewIoContext = SocketInfo->GetNewIOContext();
 	pNewIoContext->m_OpType = RECV_POSTED;
