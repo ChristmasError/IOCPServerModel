@@ -2048,3 +2048,13 @@
 2019-05-15 17:51:38.013686 [INFO]: [Disconnect] A connection closed ip:0.0.0.0 ,Current connects:500
 2019-05-15 17:51:38.013686 [INFO]: [Disconnect] A connection closed ip:0.0.0.0 ,Current connects:500
 2019-05-15 17:51:38.013686 [INFO]: [Disconnect] A connection closed ip:0.0.0.0 ,Current connects:500
+2019-05-15 21:33:14.006427 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:1
+2019-05-15 21:33:14.006427 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:1
+2019-05-15 21:33:14.006430 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 21:33:14.006430 [INFO]: [Connect] Accept a connection from:0.0.0.0 ,Current connects:2
+2019-05-15 21:33:14.006430 [INFO]: [Send] Send data successd, filesize:79, client ip:0.0.0.0
+2019-05-15 21:33:14.006430 [INFO]: [Recv] Complete response to 'GET' request from ip:0.0.0.0
+2019-05-15 21:33:14.006445 [INFO]: [Send] Send data successd, filesize:81, client ip:0.0.0.0
+2019-05-15 21:33:14.006445 [INFO]: [Recv] Complete response to 'GET' request from ip:0.0.0.0
+2019-05-15 21:33:16.008626 [INFO]: [Disconnect] A connection closed ip:0.0.0.0 ,Current connects:2
+2019-05-15 21:33:16.008626 [INFO]: [Disconnect] A connection closed ip:0.0.0.0 ,Current connects:2

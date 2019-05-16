@@ -50,6 +50,18 @@ public:
 	// 打印本地(服务器)ip地址
 	const char* GetLocalIP();
 
+	// 投递Send请求
+	bool PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
+	{
+		return _PostSend(SocketInfo, IoInfo);
+	}
+
+	// 当前服务器活跃链接数量
+	static unsigned int GetConnectCnt()
+	{
+		return m_ServerSocketPool.NumOfConnectingServer();
+	}
+
 	// 事件通知函数(派生类重载此族函数)
 	virtual void ConnectionEstablished(LPPER_SOCKET_CONTEXT socketInfo) = 0;
 	virtual void ConnectionClosed(LPPER_SOCKET_CONTEXT socketInfo) = 0;
@@ -57,15 +69,6 @@ public:
 	virtual void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo) = 0;
 	virtual void SendCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo) = 0;
 
-	bool PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
-	{
-		return _PostSend(SocketInfo, IoInfo);
-	}
-
-	static unsigned int GetConnectCnt()
-	{
-		return m_ServerSocketPool.NumOfConnectingServer();
-	}
 private:
 	// 开启服务器
 	bool _Start();
@@ -75,11 +78,14 @@ private:
 	// 2.初始化IOCP + 工作函数线程池
 	bool _InitializeServerResource();
 
+	// 1.加载Winsock库:private
+	bool _LoadSocketLib();
+
+	// 2.初始化IOCP:完成端口与工作线程线程池
+	bool _InitializeIOCP();
+
 	// 释放服务器资源
 	void _Deinitialize();
-
-	// 加载Winsock库:private
-	bool _LoadSocketLib();
 
 	// 卸载Socket库
 	bool _UnloadSocketLib()
@@ -87,17 +93,12 @@ private:
 		WSACleanup();
 	}
 
-	// 初始化IOCP:完成端口与工作线程线程池创建
-	bool _InitializeIOCP();
 
-	// 根据服务器工作模式，建立监听服务器套接字
+	// 建立监听服务器套接字
 	bool _InitializeListenSocket();
 
 	// socket是否存活
 	bool _IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo);
-
-	// 线程函数，为IOCP请求服务工作者线程
-	static DWORD WINAPI _WorkerThread(LPVOID lpParam);
 
 	// 打印消息
 	void _ShowMessage(const char*, ...) const;
@@ -108,15 +109,21 @@ private:
 	// 获取本地(服务器)IP
 	const char* _GetLocalIP();
 
+	// 线程函数，为IOCP请求服务工作者线程
+	static DWORD WINAPI _WorkerThread(LPVOID lpParam);
+
 	// 处理I/O请求
-	bool _DoAccept(LPPER_IO_CONTEXT pid);
-	bool _DoRecv(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
-	bool _DoSend(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
+	bool _DoAccept(LPPER_IO_CONTEXT socketInfo);
+	bool _DoRecv(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
+	bool _DoSend(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
 
 	// 投递I/O请求
-	bool _PostAccept(LPPER_IO_CONTEXT pid);
-	bool _PostRecv(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
-	bool _PostSend(LPPER_SOCKET_CONTEXT phd, LPPER_IO_CONTEXT pid);
+	bool _PostAccept(LPPER_IO_CONTEXT socketInfo);
+	bool _PostRecv(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
+	bool _PostSend(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
+
+	// 断开与客户端连接
+	bool _DoClose(LPPER_SOCKET_CONTEXT socketInfo);
 
 protected:
 	bool						  m_ServerRunning;				// 服务器运行状态判断
@@ -132,6 +139,7 @@ protected:
 	LPPER_SOCKET_CONTEXT          m_ListenSockInfo;				// 服务器ListenContext
 
 	LPFN_ACCEPTEX				  m_lpfnAcceptEx;				// AcceptEx函数指针
+
 	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;	// GetAcceptExSockAddrs()函数指针
 
 	int							  m_nThreads;				    // 工作线程数量

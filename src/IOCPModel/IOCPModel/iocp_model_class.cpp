@@ -27,7 +27,7 @@ IOCPModel::IOCPModel() :
 	m_nThreads(0)
 {
 	if (_LoadSocketLib() == true)
-		this->_ShowMessage("初始化WinSock 2.2成功!\n");
+		this->_ShowMessage("初始化WinSock 2.2成功...\n");
 	else
 		// 加载失败 抛出异常
 		// 初始化退出线程事件
@@ -70,7 +70,6 @@ bool IOCPModel::_Start()
 {
 	m_ServerRunning = RUNNING;
 	this->_ShowMessage("服务器已准备就绪:IP %s 正在等待客户端的接入......\n", GetLocalIP());
-	//this->_ShowMessage("服务器已准备就绪:IP %s，正在等待客户端的接入......\n",GetLocalIP());
 
 	while (m_ServerRunning)
 	{
@@ -90,7 +89,7 @@ bool IOCPModel::_InitializeServerResource()
 	}
 	else
 	{
-		this->_ShowMessage("初始化IOCP完毕!\n");
+		this->_ShowMessage("初始化IOCP完毕...\n");
 	}
 
 	// 初始化服务器ListenSocket
@@ -102,7 +101,7 @@ bool IOCPModel::_InitializeServerResource()
 	}
 	else
 	{
-		this->_ShowMessage("初始化服务器ListenSocket完毕!\n");
+		this->_ShowMessage("初始化服务器ListenSocket完毕...\n");
 	}
 	return true;
 }
@@ -116,7 +115,7 @@ bool IOCPModel::_LoadSocketLib()
 	// 错误(一般都不可能出现)
 	if (NO_ERROR != nResult)
 	{
-		this->_ShowMessage("初始化WinSock 2.2 失败!\n");
+		this->_ShowMessage("_LoadSocketLib()：初始化WinSock 2.2 失败!\n");
 		return false;
 	}
 	return true;
@@ -129,7 +128,7 @@ bool IOCPModel::_InitializeIOCP()
 	// 初始化完成端口
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (NULL == m_hIOCompletionPort)
-		this->_ShowMessage("创建完成端口失败!\n");
+		this->_ShowMessage("_InitializeIOCP()：创建完成端口失败!\n");
 
 	// 创建IO线程--线程里面创建线程池
 	// 基于处理器的核心数量创建线程
@@ -140,14 +139,14 @@ bool IOCPModel::_InitializeIOCP()
 		// 创建服务器工作器线程，并将完成端口传递到该线程
 		HANDLE hWorkThread = CreateThread(NULL, NULL, _WorkerThread, (void*)this, 0, NULL);
 		if (NULL == hWorkThread) {
-			this->_ShowMessage("创建线程句柄失败! Error:%d\n", GetLastError());
+			this->_ShowMessage("_InitializeIOCP()：创建线程句柄失败! Error:%d\n", GetLastError());
 			system("pause");
 			return false;
 		}
 		m_phWorkerThreadArray[i] = hWorkThread;
 		CloseHandle(hWorkThread);
 	}
-	this->_ShowMessage("完成创建工作者线程数量：%d 个\n", m_nThreads);
+	this->_ShowMessage("_InitializeIOCP()：完成创建工作者线程数量：%d 个...\n", m_nThreads);
 	return true;
 }
 
@@ -162,31 +161,31 @@ bool IOCPModel::_InitializeListenSocket()
 	m_ListenSockInfo->m_Sock.CreateWSASocket();
 	if (INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
 	{
-		this->_ShowMessage("创建监听socket失败!\n");
+		this->_ShowMessage("_InitializeListenSocket()：创建监听socket失败!\n");
 		return false;
 	}
 	//listen socket与完成端口绑定
 	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)m_ListenSockInfo, 0))
 	{
 		//RELEASE_SOCKET(m_ListenSockInfo->m_Sock.socket)
-		this->_ShowMessage("监听socket与完成端口绑定失败!\n");
+		this->_ShowMessage("_InitializeListenSocket()：监听socket与完成端口绑定失败!\n");
 		return false;
 	}
 	else
 	{
-		this->_ShowMessage("监听socket与完成端口绑定完成!\n");
+		this->_ShowMessage("_InitializeListenSocket()：监听socket与完成端口绑定完成...\n");
 	}
 	// 绑定地址&端口	
 	m_ListenSockInfo->m_Sock.Bind(DEFAULT_PORT);
 
 	// 开始进行监听
 	if (SOCKET_ERROR == listen(m_ListenSockInfo->m_Sock.socket, SOMAXCONN)) {
-		this->_ShowMessage("监听失败. Error:%d\n", GetLastError());
+		this->_ShowMessage("_InitializeListenSocket()：监听失败. Error:%d\n", GetLastError());
 		return false;
 	}
 	else
 	{
-		this->_ShowMessage("Listen() completed!\n");
+		this->_ShowMessage("_InitializeListenSocket()：监听开始...\n");
 	}
 
 	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
@@ -204,7 +203,7 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL,
 		NULL))
 	{
-		this->_ShowMessage("WSAIoctl 未能获取AcceptEx函数指针,错误代码: %d\n", WSAGetLastError());
+		this->_ShowMessage("WSAIoctl()未能获取AcceptEx函数指针!错误代码: %d\n", WSAGetLastError());
 		// 释放资源_Deinitialize
 		return false;
 	}
@@ -236,7 +235,7 @@ bool IOCPModel::_InitializeListenSocket()
 			return false;
 		}
 	}
-	this->_ShowMessage("投递 %d 个AcceptEx请求完毕", MAX_POST_ACCEPT);
+	this->_ShowMessage("投递 %d 个AcceptEx请求完毕...\n", MAX_POST_ACCEPT);
 	return true;
 }
 
@@ -339,7 +338,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 
 	 // 释放线程参数
 	RELEASE_HANDLE(lpParam);
-	IOCP->_ShowMessage("工作线程退出\n");
+	IOCP->_ShowMessage("工作线程退出!\n");
 	return 0;
 }
 
@@ -361,7 +360,7 @@ void IOCPModel::_Deinitialize()
 	// 关闭IOCP句柄
 	RELEASE_HANDLE(m_hIOCompletionPort);
 
-	this->_ShowMessage("服务器释放资源完毕!\n");
+	this->_ShowMessage("服务器释放资源完毕...\n");
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -425,7 +424,7 @@ bool IOCPModel::_PostAccept(LPPER_IO_CONTEXT pAcceptIoInfo)
 	{
 		if (ERROR_IO_PENDING != WSAGetLastError())
 		{
-			this->_ShowMessage("投递 AcceptEx 请求失败，错误代码: %d", WSAGetLastError());
+			this->_ShowMessage("投递AcceptEx()请求失败!错误代码: %d", WSAGetLastError());
 			return false;
 		}
 	}
@@ -440,7 +439,7 @@ bool IOCPModel::_PostRecv(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoIn
 	int nBytesRecv = WSARecv(SocketInfo->m_Sock.socket, &(IoInfo->m_wsaBuf), 1, &RecvBytes, &Flags, &(IoInfo->m_Overlapped), NULL);
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		this->_ShowMessage( "返回值错误，错误代码非Pending，重叠请求失效！\n");
+		this->_ShowMessage( "返回值错误，错误代码非Pending，重叠请求失效!\n");
 		return false;
 	}
 	return true;
@@ -478,7 +477,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	if (INVALID_SOCKET == pNewSocketInfo->m_Sock.socket)
 	{
 		m_ServerSocketPool.ReleaseSocketContext(pNewSocketInfo);
-		this->_ShowMessage("Invalid client socket!!\n");
+		this->_ShowMessage("无效的客户端socket!\n");
 		return false;
 	}
 	memcpy(&(pNewSocketInfo->m_Sock.addr), clientAddr, sizeof(SOCKADDR_IN));
@@ -500,7 +499,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT IoInfo)
 	pNewIoContext->m_AcceptSocket = pNewSocketInfo->m_Sock.socket;
 	if (false == this->_PostRecv(pNewSocketInfo, pNewIoContext))
 	{
-		this->_ShowMessage( "post first WSARecv() failed!!\n");
+		this->_ShowMessage( "投递WSARecv()失败!\n");
 		//DoClose(sockContext);
 		return false;
 	}
@@ -548,4 +547,9 @@ bool IOCPModel::_DoSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo
 {
 	this->SendCompleted(SocketInfo, IoInfo);
 	return true;
+}
+
+bool _DoClose(LPPER_SOCKET_CONTEXT socektContext)
+{
+
 }
