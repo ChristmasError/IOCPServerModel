@@ -144,11 +144,9 @@ void CLog::write_log(int level, const char*format, ...)
 		strcat(new_log_path, new_log_name);
 		m_fp = fopen(new_log_path, "a");
 	}
-	lock.UnLock();
 	va_list valst;
 	va_start(valst, format);
 	std::string log_str;
-	lock.Lock();
 	int n = snprintf(m_buf, 48, "%d-%02d-%02d %02d:%02d:%02d.%06d %s ", sys_tm->tm_year + 1900, sys_tm->tm_mon + 1, sys_tm->tm_mday, sys_tm->tm_hour, sys_tm->tm_min, sys_tm->tm_sec, start, s);
 	int m = vsnprintf(m_buf + n, m_LogBufSize - 1, format, valst);
 	m_buf[n + m + 1] = '\n';
@@ -156,15 +154,11 @@ void CLog::write_log(int level, const char*format, ...)
 	lock.UnLock();
 	if (m_isAsync) // !m_logQueue->full()
 	{
-		lock.Lock();
 		m_LogQueue.push_back(log_str);
-		lock.UnLock();
 	}
 	else
 	{
-		lock.Lock();
 		fputs(log_str.c_str(), m_fp);
-		lock.UnLock();
 	}
 }
 

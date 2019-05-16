@@ -49,11 +49,11 @@ LPPER_IO_CONTEXT IOContextPool::AllocateIoContext()
 	return context;
 }
 
-void IOContextPool::ReleaseIOContext(LPPER_IO_CONTEXT pContext)
+void IOContextPool::ReleaseIOContext(LPPER_IO_CONTEXT pIOContext)
 {
-	pContext->Reset();
+	pIOContext->Reset();
 
 	CSAutoLock csl(m_csLock);
-	contextList.push_front(pContext);
+	contextList.push_front(pIOContext);
 
 }

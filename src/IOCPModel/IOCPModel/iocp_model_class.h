@@ -4,6 +4,7 @@
 #include "per_io_context_struct.h"
 #include "per_socket_context_struct.h"
 #include "socket_context_pool_class.h"
+#include "cs_auto_lock_class.h"
 
 #include<MSWSock.h>
 
@@ -100,6 +101,9 @@ private:
 	// socket是否存活
 	bool _IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo);
 
+	// 断开与客户端连接
+	bool _DoClose(LPPER_SOCKET_CONTEXT socketInfo);
+
 	// 打印消息
 	void _ShowMessage(const char*, ...) const;
 
@@ -122,9 +126,6 @@ private:
 	bool _PostRecv(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
 	bool _PostSend(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo);
 
-	// 断开与客户端连接
-	bool _DoClose(LPPER_SOCKET_CONTEXT socketInfo);
-
 protected:
 	bool						  m_ServerRunning;				// 服务器运行状态判断
 
@@ -144,6 +145,10 @@ protected:
 
 	int							  m_nThreads;				    // 工作线程数量
 
+	CSLock                        m_csLock;						// 线程临界区互斥量
+
 	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
+
+	int test = 0;
 };
 

@@ -16,8 +16,8 @@ typedef struct _PER_SOCKET_CONTEXT
 {
 private:
 	static IOContextPool			 ioContextPool;		  // 空闲的IOcontext池
-	std::vector<LPPER_IO_CONTEXT>	 arrIoContext;		  // 同一个socket上的多个IO请求
 
+	std::vector<LPPER_IO_CONTEXT>	 arrIoContext;		  // 同一个socket上的多个IO请求
 	CSLock	  m_csLock;
 
 public: 

@@ -28,30 +28,27 @@ private:
 		LOG_INFO("[Error] A connection error:%d from ip:%s, Current connects:%d\n", errorNum , socketInfo->m_Sock.ip ,GetConnectCnt());
 	}
 	// Recv操作完毕
-	void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT IoInfo)
+	void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo)
 	{
 		HttpResponse res;     //用于处理http请求
+		string responseType;
+		string head;
 
-		bool error = false;
-		bool sendfinish = false;
 		//以下处理GET请求
-		int buflend = strlen(IoInfo->m_buffer);
+		int buflend = strlen(ioInfo->m_buffer);
 		if (buflend <= 0) {
 			return;
 		}
-		string responseType;
-		if (!res.SetRequest(IoInfo->m_buffer,responseType)) {
+		if (!res.SetRequest(ioInfo->m_buffer,responseType)) {
 			LOG_WARN("Set request failed! client ip:%s\n",socketInfo->m_Sock.ip) ;
-			error = true;
 			return;
 		}
 
-		string head = res.GetHead();
-
 		// 投递SEND，发送消息头
-		strcpy_s(IoInfo->m_buffer, head.c_str());
-		IoInfo->m_wsaBuf.len = head.size();
-		if (PostSend(socketInfo, IoInfo) == false)
+		head = res.GetHead();
+		strcpy_s(ioInfo->m_buffer, head.c_str());
+		ioInfo->m_wsaBuf.len = head.size();
+		if (PostSend(socketInfo, ioInfo) == false)
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
@@ -61,54 +58,52 @@ private:
 			}
 		}
 		// 投递SEND，发送正文数据
-		int i = 0;
-		for (;; i++)
+		while(1)
 		{
 			char buf[10240];
 			//将客户端请求的文件存入buf中并返回文件长度_len
-			int file_len = res.Read(IoInfo->m_buffer, 102400);
-			IoInfo->m_wsaBuf.len = file_len;
-			if (file_len == 0)
+			int file_len = res.Read(ioInfo->m_buffer, 102400);
+			ioInfo->m_wsaBuf.len = file_len;
+			//if(file_len!=0)
+			//	cout << "ioInfo->m_wsaBuf.len : " << file_len << endl;
+			if (file_len <= 0)
 			{
-				sendfinish = true;
-				break;
-			}
-			if (file_len < 0)
-			{
-				error = true;
-				break;
-			}
-			if (PostSend(socketInfo, IoInfo) == false)
-			{
-				if (WSAGetLastError() != WSA_IO_PENDING)
+				if (file_len == 0) // 发送完毕
 				{
-					LOG_WARN("Send data failed! client ip:%s\n", socketInfo->m_Sock.ip);
-					//DoClose(sockContext);
+					LOG_INFO("[Recv] Complete response to '%s' request from ip:%s\n", responseType.c_str(), socketInfo->m_Sock.ip);
+					return;
+				}
+				else if (file_len < 0) // 发送发生错误
+				{
+					LOG_WARN("Send file happen wrong! client close! client ip:%s", socketInfo->m_Sock.ip);
+					socketInfo->m_Sock.Close();
+					delete socketInfo;
+					delete ioInfo;
 					return;
 				}
 			}
-		}
-		if (sendfinish)
-		{
-			LOG_INFO("[Recv] Complete response to '%s' request from ip:%s\n", responseType.c_str(), socketInfo->m_Sock.ip);
-			return;
-		}
-		if (error)
-		{
-			LOG_WARN("Send file happen wrong! client close! client ip:%s", socketInfo->m_Sock.ip);
-			socketInfo->m_Sock.Close();
-			delete socketInfo;
-			delete IoInfo;
-			return;
+			else
+			{
+				if (PostSend(socketInfo, ioInfo) == false)
+				{
+					if (WSAGetLastError() != WSA_IO_PENDING)
+					{
+						LOG_WARN("Send data failed! client ip:%s\n", socketInfo->m_Sock.ip);
+						//DoClose(sockContext);
+						return;
+					}
+				}
+			}
 		}
 	}
 	// Send操作完毕
-	void SendCompleted(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT IoInfo)
-	{
-		if(IoInfo->m_wsaBuf.len != 0)
-			LOG_INFO("[Send] Send data successd, filesize:%d, client ip:%s\n", IoInfo->m_wsaBuf.len,SocketInfo->m_Sock.ip);
+	void SendCompleted(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioInfo)
+	{	
+		//if(ioInfo->m_wsaBuf.len != 0)
+			LOG_INFO("[Send] Send data successd, filesize:%d, client ip:%s\n", ioInfo->m_wsaBuf.len,SocketInfo->m_Sock.ip);
 		return;
 	}
+
 };
 int main()
 {
