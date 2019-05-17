@@ -151,7 +151,6 @@ void CLog::write_log(int level, const char*format, ...)
 	int m = vsnprintf(m_buf + n, m_LogBufSize - 1, format, valst);
 	m_buf[n + m + 1] = '\n';
 	log_str = m_buf;
-	lock.UnLock();
 	if (m_isAsync) // !m_logQueue->full()
 	{
 		m_LogQueue.push_back(log_str);

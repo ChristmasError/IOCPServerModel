@@ -8,7 +8,8 @@ CSLock::CSLock()
 }
 CSLock::~CSLock()
 {
-	::InitializeCriticalSection(&m_cs);
+	::LeaveCriticalSection(&m_cs);
+	::DeleteCriticalSection(&m_cs);
 }
 
 void CSLock::Lock()

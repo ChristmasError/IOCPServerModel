@@ -25,7 +25,7 @@ private:
 	// 连接发生错误
 	void ConnectionError(LPPER_SOCKET_CONTEXT socketInfo, DWORD errorNum)
 	{
-		LOG_INFO("[Error] A connection error:%d from ip:%s, Current connects:%d\n", errorNum , socketInfo->m_Sock.ip ,GetConnectCnt());
+		LOG_WARN("[Error] A connection error:%d from ip:%s, Current connects:%d\n", errorNum , socketInfo->m_Sock.ip ,GetConnectCnt());
 	}
 	// Recv操作完毕
 	void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo)
@@ -40,7 +40,7 @@ private:
 			return;
 		}
 		if (!res.SetRequest(ioInfo->m_buffer,responseType)) {
-			LOG_WARN("Set request failed! client ip:%s\n",socketInfo->m_Sock.ip) ;
+			LOG_WARN("[Error] Set request failed! client ip:%s\n",socketInfo->m_Sock.ip);
 			return;
 		}
 
@@ -52,7 +52,7 @@ private:
 		{
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
-				LOG_WARN("Send http headers failed! client ip:%s\n",socketInfo->m_Sock.ip) ;
+				LOG_WARN("[Error] Send http headers failed! client ip:%s\n",socketInfo->m_Sock.ip) ;
 				//DoClose(sockContext);
 				return;
 			}
@@ -64,8 +64,6 @@ private:
 			//将客户端请求的文件存入buf中并返回文件长度_len
 			int file_len = res.Read(ioInfo->m_buffer, 102400);
 			ioInfo->m_wsaBuf.len = file_len;
-			//if(file_len!=0)
-			//	cout << "ioInfo->m_wsaBuf.len : " << file_len << endl;
 			if (file_len <= 0)
 			{
 				if (file_len == 0) // 发送完毕
@@ -75,7 +73,7 @@ private:
 				}
 				else if (file_len < 0) // 发送发生错误
 				{
-					LOG_WARN("Send file happen wrong! client close! client ip:%s", socketInfo->m_Sock.ip);
+					LOG_WARN("[Error] Send file happen wrong! client close! client ip:%s", socketInfo->m_Sock.ip);
 					socketInfo->m_Sock.Close();
 					delete socketInfo;
 					delete ioInfo;
@@ -88,7 +86,7 @@ private:
 				{
 					if (WSAGetLastError() != WSA_IO_PENDING)
 					{
-						LOG_WARN("Send data failed! client ip:%s\n", socketInfo->m_Sock.ip);
+						LOG_WARN("[Error] Send data failed! client ip:%s\n", socketInfo->m_Sock.ip);
 						//DoClose(sockContext);
 						return;
 					}
@@ -99,8 +97,7 @@ private:
 	// Send操作完毕
 	void SendCompleted(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioInfo)
 	{	
-		//if(ioInfo->m_wsaBuf.len != 0)
-			LOG_INFO("[Send] Send data successd, filesize:%d, client ip:%s\n", ioInfo->m_wsaBuf.len,SocketInfo->m_Sock.ip);
+		LOG_INFO("[Send] Send data successd,client ip:%s\n",SocketInfo->m_Sock.ip);
 		return;
 	}
 

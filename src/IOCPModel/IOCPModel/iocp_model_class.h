@@ -56,6 +56,12 @@ public:
 	{
 		return _PostSend(SocketInfo, IoInfo);
 	}
+	
+	// 关闭连接
+	void DoClose(LPPER_SOCKET_CONTEXT socketInfo)
+	{
+		_DoClose(socketInfo);
+	}
 
 	// 当前服务器活跃链接数量
 	static unsigned int GetConnectCnt()
@@ -93,7 +99,6 @@ private:
 	{
 		WSACleanup();
 	}
-
 
 	// 建立监听服务器套接字
 	bool _InitializeListenSocket();
@@ -145,10 +150,6 @@ protected:
 
 	int							  m_nThreads;				    // 工作线程数量
 
-	CSLock                        m_csLock;						// 线程临界区互斥量
-
 	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
-
-	int test = 0;
 };
 

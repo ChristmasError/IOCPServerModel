@@ -106,7 +106,7 @@ bool IOCPModel::_LoadSocketLib()
 {
 	WSADATA	wsaData;	// Winsock服务初始化
 	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	// 错误(一般都不可能出现)
+	// 错误
 	if (NO_ERROR != nResult)
 	{
 		this->_ShowMessage("_LoadSocketLib()：初始化WinSock 2.2 失败!\n");
@@ -149,7 +149,6 @@ bool IOCPModel::_InitializeIOCP()
 bool IOCPModel::_InitializeListenSocket()
 {
 	// 创建用于监听的 Listen Socket Context
-
 	m_ListenSockInfo = new PER_SOCKET_CONTEXT;
 	m_ListenSockInfo->m_Sock.CreateWSASocket();
 	if (INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
@@ -197,7 +196,8 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL))
 	{
 		this->_ShowMessage("WSAIoctl()未能获取AcceptEx函数指针!错误代码: %d\n", WSAGetLastError());
-		// 释放资源_Deinitialize
+		delete m_ListenSockInfo;
+		this->_Deinitialize();
 		return false;
 	}
 
@@ -214,7 +214,8 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL))
 	{
 		this->_ShowMessage("WSAIoctl 未能获取GetAcceptExSockAddrs函数指针,错误代码: %d\n", WSAGetLastError());
-		// 释放资源_Deinitialize
+		delete m_ListenSockInfo;
+		this->_Deinitialize();
 		return false;
 	}
 
@@ -303,7 +304,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 				if (IOCP->_IsSocketAlive(socketInfo))
 				{
 					IOCP->ConnectionClosed(socketInfo);
-					//ConnectionClose(handleInfo)
+					m_ServerSocketPool.ReleaseSocketContext(socketInfo);
 					continue;
 				}
 				else
@@ -315,12 +316,10 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 			else if (ERROR_NETNAME_DELETED == dwError)
 			{
 				IOCP->ConnectionError(socketInfo, dwError);
-				//ConnectionClose(handleInfo)
 			}
 			else
 			{
 				IOCP->ConnectionError(socketInfo, dwError);
-				//ConnectionClose(handleInfo)
 			}
 		}
 		else
@@ -328,8 +327,9 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 			// 心跳包判断是否有客户端断开
 			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED))
 			{
+				//std::cout << "心跳包检测\n";
 				IOCP->ConnectionClosed(socketInfo);
-				//ConnectionClose(handleInfo);
+				IOCP->_DoClose(socketInfo);
 				continue;
 			}
 			else
@@ -388,11 +388,10 @@ bool IOCPModel::_IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo)
 }
 
 /////////////////////////////////////////////////////////////////
-// 断开与客户端连接
+// 断开与客户端连接,将内存返回给socket池
 bool IOCPModel::_DoClose(LPPER_SOCKET_CONTEXT socektContext)
 {
-	CSAutoLock cslock(m_csLock);
-	delete socektContext;
+	m_ServerSocketPool.ReleaseSocketContext(socektContext);
 	return true;
 }
 
@@ -408,11 +407,9 @@ int IOCPModel::_GetNumberOfProcessors()
 // 打印消息
 void IOCPModel::_ShowMessage(const char* msg, ...) const
 {
-	
 	va_list valist;
 	va_start(valist,msg);
 	vprintf(msg, valist);
-	//std::cout << va_arg(msg, const char*) << std::endl;
 	va_end(valist);
 
 }
@@ -481,7 +478,7 @@ bool IOCPModel::_PostSend(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioIn
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			//DoClose(SocketInfo);
+			_DoClose(SocketInfo);
 			return false;
 		}
 	}
@@ -504,7 +501,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	pNewSocketInfo->m_Sock.socket = ioInfo->m_AcceptSocket;
 	if (INVALID_SOCKET == pNewSocketInfo->m_Sock.socket)
 	{
-		m_ServerSocketPool.ReleaseSocketContext(pNewSocketInfo);
+		_DoClose(pNewSocketInfo);
 		this->_ShowMessage("无效的客户端socket!\n");
 		return false;
 	}
@@ -514,9 +511,9 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	if (NULL == CreateIoCompletionPort((HANDLE)pNewSocketInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)pNewSocketInfo, 0))
 	{
 		DWORD dwErr = WSAGetLastError();
-		if (dwErr != ERROR_INVALID_PARAMETER)
+		if (dwErr == ERROR_INVALID_PARAMETER)
 		{
-			//DoClose(newSockContext);
+			_DoClose(pNewSocketInfo);
 			return false;
 		}
 	}
@@ -527,8 +524,8 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	pNewIoContext->m_AcceptSocket = pNewSocketInfo->m_Sock.socket;
 	if (false == this->_PostRecv(pNewSocketInfo, pNewIoContext))
 	{
-		this->_ShowMessage( "投递WSARecv()失败!\n");
-		//DoClose(sockContext);
+		_DoClose(pNewSocketInfo);
+		this->_ShowMessage( "投递首个WSARecv()失败!\n");
 		return false;
 	}
 
@@ -548,7 +545,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	unsigned long ulBytesReturn = 0;
 	if (SOCKET_ERROR == WSAIoctl(pNewSocketInfo->m_Sock.socket, SIO_KEEPALIVE_VALS, &alive_in, sizeof(alive_in), &alive_out, sizeof(alive_out), &ulBytesReturn, NULL, NULL))
 	{
-		//TRACE(L"WSAIoctl failed: %d/n", WSAGetLastError());
+		this->_ShowMessage("WSAIoctl() warning!\n");
 	}
 
 	this->ConnectionEstablished(pNewSocketInfo);

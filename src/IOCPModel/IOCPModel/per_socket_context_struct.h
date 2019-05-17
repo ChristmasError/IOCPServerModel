@@ -30,11 +30,12 @@ public:
 	// 释放资源
 	~_PER_SOCKET_CONTEXT()
 	{
-		for (auto it : arrIoContext)
-		{
-			ioContextPool.ReleaseIOContext(it);
-		}
-		CSAutoLock cs(m_csLock);
+		//
+		//for (auto it : arrIoContext)
+		//{
+		//	ioContextPool.ReleaseIOContext(it);
+		//}
+		CSAutoLock cslock(m_csLock);
 		arrIoContext.clear();
 	}
 	// 获取一个新的IO_DATA
@@ -57,7 +58,7 @@ public:
 			{
 				ioContextPool.ReleaseIOContext(*it);
 
-				CSAutoLock cs(m_csLock);
+//				CSAutoLock cs(m_csLock);
 				arrIoContext.erase(it);
 
 				break;
@@ -66,5 +67,3 @@ public:
 	}
 
 } PER_SOCKET_CONTEXT, *LPPER_SOCKET_CONTEXT;
-
-
