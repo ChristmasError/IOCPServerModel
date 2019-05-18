@@ -44,6 +44,9 @@ public:
 	void Reset()
 	{
 		ZeroMemory(m_buffer, BUF_SIZE);
+		m_wsaBuf.buf = m_buffer;
+		m_wsaBuf.len = BUF_SIZE;
+		m_OpType = NULL_POSTED;
 		//ZeroMemory(&m_Overlapped, sizeof(m_Overlapped));
 		//
 		//if (m_wsaBuf.buf != NULL)

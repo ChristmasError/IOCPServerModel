@@ -51,10 +51,10 @@ LPPER_IO_CONTEXT IOContextPool::AllocateIoContext()
 
 void IOContextPool::ReleaseIOContext(LPPER_IO_CONTEXT pIOContext)
 {	
-	//pIOContext->Reset();
+	pIOContext->Reset();
 	delete pIOContext;
 	pIOContext = NULL;
 	LPPER_IO_CONTEXT pNewIoContext = new PER_IO_CONTEXT;
-	//CSAutoLock cslock(m_csLock);
+	CSAutoLock cslock(m_csLock);
 	this->contextList.push_front(pNewIoContext);
 }

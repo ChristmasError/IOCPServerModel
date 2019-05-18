@@ -25,7 +25,7 @@ private:
 	// 连接发生错误
 	void ConnectionError(LPPER_SOCKET_CONTEXT socketInfo, DWORD errorNum)
 	{
-		LOG_WARN("[Error] A connection error:%d from ip:%s, Current connects:%d\n", errorNum , socketInfo->m_Sock.ip ,GetConnectCnt());
+		LOG_WARN("[Error] A connection error from ip:%s, Current connects:%d\n" , socketInfo->m_Sock.ip, GetConnectCnt());
 	}
 	// Recv操作完毕
 	void RecvCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo)

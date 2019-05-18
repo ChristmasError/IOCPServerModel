@@ -178,6 +178,13 @@ void WinSock::Close()
 }
 WinSock::~WinSock()
 {
+	if (socket != INVALID_SOCKET)
+	{
+		closesocket(socket);
+		socket = INVALID_SOCKET;
+	}
+	//if(ip!=NULL)
+	//	delete[] ip;
 }
 /////////////////////////////////////////////////////////////////
 // private:

@@ -327,7 +327,7 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 			// 心跳包判断是否有客户端断开
 			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED))
 			{
-				//std::cout << "心跳包检测\n";
+				std::cout << "心跳包检测\n";
 				IOCP->ConnectionClosed(socketInfo);
 				IOCP->_DoClose(socketInfo);
 				continue;

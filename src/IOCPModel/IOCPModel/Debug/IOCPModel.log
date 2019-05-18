@@ -1,1 +1,4 @@
-﻿  IOCPModel.vcxproj -> D:\Github local repository\IOCPModel\src\IOCPModel\IOCPModel\..\..\..\lib\IOCPModel.lib
+﻿  iocp_model_class.cpp
+d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(131): warning C4018: “<”: 有符号/无符号不匹配
+d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(61): warning C4715: “IOCPModel::StartServer”: 不是所有的控件路径都返回值
+  IOCPModel.vcxproj -> D:\Github local repository\IOCPModel\src\IOCPModel\IOCPModel\..\..\..\lib\IOCPModel.lib

@@ -15,6 +15,7 @@ CSLock::~CSLock()
 void CSLock::Lock()
 {
 	::EnterCriticalSection(&m_cs);
+	// 当并行数量超过工作线程数 报错
 }
 
 void CSLock::UnLock()
