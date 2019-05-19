@@ -13,8 +13,7 @@ class IOContextPool
 {
 private:
 	std::list<LPPER_IO_CONTEXT> contextList;
-	CSLock m_csLock;
-
+	CRITICAL_SECTION m_csLock;
 public:
 	IOContextPool();
 	~IOContextPool();

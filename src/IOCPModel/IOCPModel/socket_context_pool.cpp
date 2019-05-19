@@ -15,7 +15,7 @@ SocketContextPool::~SocketContextPool()
 
 LPPER_SOCKET_CONTEXT SocketContextPool::AllocateSocketContext()
 {
-	CSAutoLock cs(m_csLock);
+
 	LPPER_SOCKET_CONTEXT psocket = SocketPool.newElement();
 	nConnectionSocket++;
 	
@@ -24,12 +24,11 @@ LPPER_SOCKET_CONTEXT SocketContextPool::AllocateSocketContext()
 
 void SocketContextPool::ReleaseSocketContext(LPPER_SOCKET_CONTEXT pSocket)
 {
-	//CSAutoLock cs(m_csLock);
 	SocketPool.deleteElement(pSocket);
 	nConnectionSocket--;
 }
 unsigned int SocketContextPool::NumOfConnectingServer()
 {
-	CSAutoLock cs(m_csLock);
+
 	return nConnectionSocket;
 }

@@ -5,7 +5,7 @@
 WinSock::WinSock()
 {
 	// ≥ı ºªØ
-	socket = 0;
+	socket = INVALID_SOCKET;
 	addr = { 0 };
 	ip = NULL;
 	port = 0;

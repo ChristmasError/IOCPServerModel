@@ -37,6 +37,7 @@ IOCPModel::IOCPModel() :
 		// 加载失败 抛出异常
 		// 初始化退出线程事件
 		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	InitializeCriticalSection(&m_csLock);
 }
 // 析构
 IOCPModel::~IOCPModel()
@@ -250,6 +251,8 @@ void IOCPModel::_Deinitialize()
 	// 关闭IOCP句柄
 	RELEASE_HANDLE(m_hIOCompletionPort);
 
+	DeleteCriticalSection(&m_csLock);
+
 	this->_ShowMessage("服务器释放资源完毕...\n");
 }
 
@@ -294,38 +297,23 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 		{
 			continue;
 		}
+
 		if (bRet == false)
 		{
 			DWORD dwError = GetLastError();
-			// 超时检测，进入计时等待
-			if (WAIT_TIMEOUT == dwError)
+			// 显示提示信息
+			if (false == IOCP->_HandleError(socketInfo, dwError))
 			{
-				// 客户端仍在活动
-				if (IOCP->_IsSocketAlive(socketInfo))
-				{
-					IOCP->ConnectionClosed(socketInfo);
-					m_ServerSocketPool.ReleaseSocketContext(socketInfo);
-					continue;
-				}
-				else
-				{
-					continue;
-				}
-			}
-			// 错误64 客户端异常退出
-			else if (ERROR_NETNAME_DELETED == dwError)
-			{
-				IOCP->ConnectionError(socketInfo, dwError);
+				break;
 			}
 			else
-			{
-				IOCP->ConnectionError(socketInfo, dwError);
-			}
+				continue;
 		}
 		else
 		{
+			// 读取传入的参数
 			// 心跳包判断是否有客户端断开
-			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED))
+			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED || ioInfo->m_OpType == NULL_POSTED ))
 			{
 				std::cout << "心跳包检测\n";
 				IOCP->ConnectionClosed(socketInfo);
@@ -346,10 +334,11 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 					IOCP->_DoSend(socketInfo, ioInfo);
 					break;
 				default:
+					IOCP->_ShowMessage("ioInfo->m_OpType 参数异常!\n");
 					break;
-				}
-			}
-		}
+				}//switch
+			}//if
+		}//if
 
 	}//while
 
@@ -387,12 +376,51 @@ bool IOCPModel::_IsSocketAlive(LPPER_SOCKET_CONTEXT socketInfo)
 		return true;
 }
 
+///////////////////////////////////////////////////////////////////
+// 处理完成端口上的错误
+bool IOCPModel::_HandleError(LPPER_SOCKET_CONTEXT socketInfo, const DWORD&dwErr)
+{
+	if (socketInfo == NULL)
+		return false;
+	if (WAIT_TIMEOUT == dwErr)
+	{
+		// 检查客户端是否在线
+		if ( !_IsSocketAlive(socketInfo))
+		{
+			this->_ShowMessage("客户端断开连接!\n");
+			this->_DoClose(socketInfo);
+			return true;
+		}
+		else
+		{
+			this->_ShowMessage("网络超时!重试中...\n");
+			return true;
+		}
+	}
+	// 客户端异常退出
+	else if (ERROR_NETNAME_DELETED == dwErr)
+	{
+		this->_ShowMessage("检测到客户端异常退出");
+		this->_DoClose(socketInfo);
+		return true;
+	}
+	else
+	{
+		this->_ShowMessage("完成端口操作出现错误，线程退出。错误代码：%d", dwErr);
+		return true; //flase
+	}
+}
+
+
 /////////////////////////////////////////////////////////////////
 // 断开与客户端连接,将内存返回给socket池
-bool IOCPModel::_DoClose(LPPER_SOCKET_CONTEXT socektContext)
+void IOCPModel::_DoClose(LPPER_SOCKET_CONTEXT socektContext)
 {
+	EnterCriticalSection(&m_csLock);
+
 	m_ServerSocketPool.ReleaseSocketContext(socektContext);
-	return true;
+
+	LeaveCriticalSection(&m_csLock);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -464,7 +492,6 @@ bool IOCPModel::_PostRecv(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioIn
 	int nBytesRecv = WSARecv(SocketInfo->m_Sock.socket, &(ioInfo->m_wsaBuf), 1, &RecvBytes, &Flags, &(ioInfo->m_Overlapped), NULL);
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		this->_ShowMessage( "返回值错误，错误代码非Pending，重叠请求失效!\n");
 		return false;
 	}
 	return true;
@@ -497,8 +524,10 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	m_lpfnGetAcceptExSockAddrs(ioInfo->m_wsaBuf.buf, 0, localAddrLen, clientAddrLen, (LPSOCKADDR *)&localAddr, &localAddrLen, (LPSOCKADDR *)&clientAddr, &clientAddrLen);
 
 	// 2. 每一个客户端连入，就为新连接建立一个SocketContext 
+	EnterCriticalSection(&m_csLock);
 	LPPER_SOCKET_CONTEXT pNewSocketInfo = m_ServerSocketPool.AllocateSocketContext();
 	pNewSocketInfo->m_Sock.socket = ioInfo->m_AcceptSocket;
+	LeaveCriticalSection(&m_csLock);
 	if (INVALID_SOCKET == pNewSocketInfo->m_Sock.socket)
 	{
 		_DoClose(pNewSocketInfo);
@@ -519,9 +548,11 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	}
 
 	// 4. 为这个客户端建立一个NewIoContext,并投递一个RECV
+	EnterCriticalSection(&m_csLock);
 	LPPER_IO_CONTEXT pNewIoContext = pNewSocketInfo->GetNewIOContext();
 	pNewIoContext->m_OpType = RECV_POSTED;
 	pNewIoContext->m_AcceptSocket = pNewSocketInfo->m_Sock.socket;
+	LeaveCriticalSection(&m_csLock);
 	if (false == this->_PostRecv(pNewSocketInfo, pNewIoContext))
 	{
 		_DoClose(pNewSocketInfo);
@@ -556,6 +587,7 @@ bool IOCPModel::_DoRecv(LPPER_SOCKET_CONTEXT SocketInfo, LPPER_IO_CONTEXT ioInfo
 {
 	this->RecvCompleted(SocketInfo, ioInfo);
 	// 在此socketInfo上投递新的RECV请求
+
 	LPPER_IO_CONTEXT pNewIoContext = SocketInfo->GetNewIOContext();
 	pNewIoContext->m_OpType = RECV_POSTED;
 	pNewIoContext->m_AcceptSocket = SocketInfo->m_Sock.socket;

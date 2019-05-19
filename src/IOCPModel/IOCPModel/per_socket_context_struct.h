@@ -18,24 +18,22 @@ public:
 	WinSock	  m_Sock;		//每一个socket的信息
 private:
 	static IOContextPool			 ioContextPool;		  // 空闲的IOcontext池
-	// vector存放IOContext的指针，析构要将指针指向逐个销毁,此处是将IOContext返还给IOContext池
+
 	std::vector<LPPER_IO_CONTEXT>	 arrIoContext;		  // 同一个socket上的多个IO请求
-	CSLock	  m_csLock;
 
 public:
 	_PER_SOCKET_CONTEXT()
 	{
-		m_Sock.socket = INVALID_SOCKET;
+		m_Sock.socket = INVALID_SOCKET;	
 	}
 	// 释放资源
 	~_PER_SOCKET_CONTEXT()
 	{
-		printf("释放socketContet\n");
+
 		for (std::vector<LPPER_IO_CONTEXT>::iterator it = arrIoContext.begin(); it != arrIoContext.end(); it++)
 		{
 			ioContextPool.ReleaseIOContext(*it);
 		}
-		CSAutoLock cslock(m_csLock);
 		arrIoContext.clear();
 	}
 	// 获取一个新的IO_DATA
@@ -44,7 +42,6 @@ public:
 		LPPER_IO_CONTEXT context = ioContextPool.AllocateIoContext();
 		if (context != NULL)
 		{
-			CSAutoLock cs(m_csLock);
 			arrIoContext.push_back(context);
 		}
 		return context;
@@ -58,7 +55,6 @@ public:
 			{
 				ioContextPool.ReleaseIOContext(*it);
 
-				CSAutoLock cs(m_csLock);
 				arrIoContext.erase(it);
 
 				break;
