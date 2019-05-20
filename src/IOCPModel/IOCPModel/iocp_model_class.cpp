@@ -26,7 +26,7 @@ IOCPModel::IOCPModel() :
 	m_ServerRunning(STOP),
 	m_hIOCompletionPort(INVALID_HANDLE_VALUE),
 	m_phWorkerThreadArray(NULL),
-	m_ListenSockInfo(NULL),
+	m_lpListenSockInfo(NULL),
 	m_lpfnAcceptEx(NULL),
 	m_lpfnGetAcceptExSockAddrs(NULL),
 	m_nThreads(0)
@@ -34,10 +34,10 @@ IOCPModel::IOCPModel() :
 	if (_LoadSocketLib() == true)
 		this->_ShowMessage("初始化WinSock 2.2成功...\n");
 	else
+		this->_ShowMessage("初始化WinSock 2.2失败...\n");
 		// 加载失败 抛出异常
 		// 初始化退出线程事件
-		m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	InitializeCriticalSection(&m_csLock);
+	m_hWorkerShutdownEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
 // 析构
 IOCPModel::~IOCPModel()
@@ -45,26 +45,40 @@ IOCPModel::~IOCPModel()
 	_Deinitialize();
 }
 /////////////////////////////////////////////////////////////////
+// 加载SOCKET库
+bool IOCPModel::_LoadSocketLib()
+{
+	WSADATA	wsaData;	// Winsock服务初始化
+	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	// 错误
+	if (NO_ERROR != nResult)
+	{
+		this->_ShowMessage("_LoadSocketLib():初始化WinSock 2.2 失败!\n");
+		return false;
+	}
+	return true;
+}
+
+/////////////////////////////////////////////////////////////////
 // 初始化资源,启动服务器相关
 bool IOCPModel::StartServer()
 {
 	// 服务器运行状态检测
 	if (m_ServerRunning)
 	{
-		this->_ShowMessage("服务器运行中,请勿重复运行!\n");
+		this->_ShowMessage("[WARRING]服务器运行中,请勿重复运行!\n");
 		return false;
 	}
 	// 初始化服务器所需资源
-	_InitializeServerResource();
+	if (false == _InitializeServerResource())//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	{
+		this->_ShowMessage("[ERROR]服务器资源初始化失败,服务器资源释放...\n");
+		this->_Deinitialize();
+	}
 
 	// 服务器开始工作
-	_Start();
-}
-
-bool IOCPModel::_Start()
-{
 	m_ServerRunning = RUNNING;
-	this->_ShowMessage("服务器已准备就绪:IP %s 正在等待客户端的接入......\n", GetLocalIP());
+	this->_ShowMessage("服务器已准备就绪:IP %s 正在等待客户端的接入...\n", GetLocalIP());
 
 	while (m_ServerRunning)
 	{
@@ -76,43 +90,21 @@ bool IOCPModel::_Start()
 // 初始化服务器资源
 bool IOCPModel::_InitializeServerResource()
 {
-	// 初始化IOCP
+	// 初始化IOCP与工作线程
 	if (false == _InitializeIOCP())
 	{
-		this->_ShowMessage("初始化IOCP失败!\n");
+		this->_ShowMessage("初始化IOCP与工作线程失败!\n");
 		return false;
-	}
-	else
-	{
-		this->_ShowMessage("初始化IOCP完毕...\n");
 	}
 
 	// 初始化服务器ListenSocket
 	if (false == _InitializeListenSocket())
 	{
 		this->_ShowMessage("初始化服务器ListenSocket失败!\n");
-		this->_Deinitialize();
 		return false;
 	}
-	else
-	{
-		this->_ShowMessage("初始化服务器ListenSocket完毕...\n");
-	}
-	return true;
-}
 
-/////////////////////////////////////////////////////////////////
-// 加载SOCKET库
-bool IOCPModel::_LoadSocketLib()
-{
-	WSADATA	wsaData;	// Winsock服务初始化
-	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	// 错误
-	if (NO_ERROR != nResult)
-	{
-		this->_ShowMessage("_LoadSocketLib()：初始化WinSock 2.2 失败!\n");
-		return false;
-	}
+	this->_ShowMessage("服务器资源初始化完毕...\n");
 	return true;
 }
 
@@ -123,7 +115,7 @@ bool IOCPModel::_InitializeIOCP()
 	// 初始化完成端口
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (NULL == m_hIOCompletionPort)
-		this->_ShowMessage("_InitializeIOCP()：创建完成端口失败!\n");
+		this->_ShowMessage("_InitializeIOCP():创建完成端口失败!\n");
 
 	// 创建IO线程--线程里面创建线程池
 	// 基于处理器的核心数量创建线程
@@ -133,15 +125,13 @@ bool IOCPModel::_InitializeIOCP()
 	{
 		// 创建服务器工作器线程，并将完成端口传递到该线程
 		HANDLE hWorkThread = CreateThread(NULL, NULL, _WorkerThread, (void*)this, 0, NULL);
-		if (NULL == hWorkThread) {
-			this->_ShowMessage("_InitializeIOCP()：创建线程句柄失败! Error:%d\n", GetLastError());
-			system("pause");
+		if (INVALID_HANDLE_VALUE == hWorkThread) {
+			this->_ShowMessage("_InitializeIOCP():创建工作线程失败! Error:%d\n", GetLastError());
 			return false;
 		}
 		m_phWorkerThreadArray[i] = hWorkThread;
-		CloseHandle(hWorkThread);
 	}
-	this->_ShowMessage("_InitializeIOCP()：完成创建工作者线程数量：%d 个...\n", m_nThreads);
+	this->_ShowMessage("_InitializeIOCP():完成创建工作者线程数量:%d 个...\n", m_nThreads);
 	return true;
 }
 
@@ -150,35 +140,27 @@ bool IOCPModel::_InitializeIOCP()
 bool IOCPModel::_InitializeListenSocket()
 {
 	// 创建用于监听的 Listen Socket Context
-	m_ListenSockInfo = new PER_SOCKET_CONTEXT;
-	m_ListenSockInfo->m_Sock.CreateWSASocket();
-	if (INVALID_SOCKET == m_ListenSockInfo->m_Sock.socket)
+	m_lpListenSockInfo = new PER_SOCKET_CONTEXT;
+	m_lpListenSockInfo->m_Sock.CreateWSASocket();
+	if (INVALID_SOCKET == m_lpListenSockInfo->m_Sock.socket)
 	{
-		this->_ShowMessage("_InitializeListenSocket()：创建监听socket失败!\n");
+		this->_ShowMessage("_InitializeListenSocket:创建监听socket失败!\n");
 		return false;
 	}
 	//listen socket与完成端口绑定
-	if (NULL == CreateIoCompletionPort((HANDLE)m_ListenSockInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)m_ListenSockInfo, 0))
+	if (NULL == CreateIoCompletionPort((HANDLE)m_lpListenSockInfo->m_Sock.socket, m_hIOCompletionPort, (DWORD)m_lpListenSockInfo, 0))
 	{
-		//RELEASE_SOCKET(m_ListenSockInfo->m_Sock.socket)
-		this->_ShowMessage("_InitializeListenSocket()：监听socket与完成端口绑定失败!\n");
+		//RELEASE_HANDLE(m_lpListenSockInfo->m_Sock.socket);
+		this->_ShowMessage("_InitializeListenSocket:监听socket与完成端口绑定失败!\n");
 		return false;
-	}
-	else
-	{
-		this->_ShowMessage("_InitializeListenSocket()：监听socket与完成端口绑定完成...\n");
 	}
 	// 绑定地址&端口	
-	m_ListenSockInfo->m_Sock.Bind(DEFAULT_PORT);
+	m_lpListenSockInfo->m_Sock.Bind(DEFAULT_PORT);
 
 	// 开始进行监听
-	if (SOCKET_ERROR == listen(m_ListenSockInfo->m_Sock.socket, SOMAXCONN)) {
-		this->_ShowMessage("_InitializeListenSocket()：监听失败. Error:%d\n", GetLastError());
+	if (SOCKET_ERROR == listen(m_lpListenSockInfo->m_Sock.socket, SOMAXCONN)) {
+		this->_ShowMessage("_InitializeListenSocket:监听失败. Error:%d\n", GetLastError());
 		return false;
-	}
-	else
-	{
-		this->_ShowMessage("_InitializeListenSocket()：监听开始...\n");
 	}
 
 	// AcceptEx 和 GetAcceptExSockaddrs 的GUID，用于导出函数指针
@@ -186,7 +168,7 @@ bool IOCPModel::_InitializeListenSocket()
 	GUID guidGetAcceptEXSockAddrs = WSAID_GETACCEPTEXSOCKADDRS;
 	DWORD dwBytes = 0;
 	if (SOCKET_ERROR == WSAIoctl(
-		m_ListenSockInfo->m_Sock.socket,
+		m_lpListenSockInfo->m_Sock.socket,
 		SIO_GET_EXTENSION_FUNCTION_POINTER,
 		&guidAcceptEx,
 		sizeof(guidAcceptEx),
@@ -196,15 +178,15 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL,
 		NULL))
 	{
-		this->_ShowMessage("WSAIoctl()未能获取AcceptEx函数指针!错误代码: %d\n", WSAGetLastError());
-		delete m_ListenSockInfo;
+		this->_ShowMessage("_InitializeListenSocket:WSAIoctl()未能获取AcceptEx函数指针!错误代码: %d\n", WSAGetLastError());
+		delete m_lpListenSockInfo;
 		this->_Deinitialize();
 		return false;
 	}
 
 	// 同理，获取GetAcceptExSockAddrs函数指针
 	if (SOCKET_ERROR == WSAIoctl(
-		m_ListenSockInfo->m_Sock.socket,
+		m_lpListenSockInfo->m_Sock.socket,
 		SIO_GET_EXTENSION_FUNCTION_POINTER,
 		&guidGetAcceptEXSockAddrs,
 		sizeof(guidGetAcceptEXSockAddrs),
@@ -214,8 +196,8 @@ bool IOCPModel::_InitializeListenSocket()
 		NULL,
 		NULL))
 	{
-		this->_ShowMessage("WSAIoctl 未能获取GetAcceptExSockAddrs函数指针,错误代码: %d\n", WSAGetLastError());
-		delete m_ListenSockInfo;
+		this->_ShowMessage("_InitializeListenSocket:WSAIoctl 未能获取GetAcceptExSockAddrs函数指针,错误代码: %d\n", WSAGetLastError());
+		delete m_lpListenSockInfo;
 		this->_Deinitialize();
 		return false;
 	}
@@ -230,7 +212,7 @@ bool IOCPModel::_InitializeListenSocket()
 			return false;
 		}
 	}
-	this->_ShowMessage("投递 %d 个AcceptEx请求完毕...\n", MAX_POST_ACCEPT);
+	this->_ShowMessage("投递 %d 个AcceptEx请求...\n", MAX_POST_ACCEPT);
 	return true;
 }
 
@@ -238,28 +220,28 @@ bool IOCPModel::_InitializeListenSocket()
 // 释放所有资源
 void IOCPModel::_Deinitialize()
 {
-	// 关闭系统退出事件句柄
 	RELEASE_HANDLE(m_hWorkerShutdownEvent);
 
-	// 释放工作者线程句柄指针
-	for (int i = 0; i < m_nThreads; i++)
+	if (m_phWorkerThreadArray != NULL)
 	{
-		RELEASE_HANDLE(m_phWorkerThreadArray[i]);
-	}
-	delete[] m_phWorkerThreadArray;
-
-	// 关闭IOCP句柄
+		for (int i = 0; i < m_nThreads; i++)
+		{
+			RELEASE_HANDLE(m_phWorkerThreadArray[i]);
+		}
+		delete[] m_phWorkerThreadArray;
+	}	
 	RELEASE_HANDLE(m_hIOCompletionPort);
 
-	DeleteCriticalSection(&m_csLock);
+	RELEASE(m_lpListenSockInfo);
 
-	this->_ShowMessage("服务器释放资源完毕...\n");
+	this->_ShowMessage("服务器资源释放完毕,服务器关闭...\n");
 }
 
 /////////////////////////////////////////////////////////////////
 // 关闭服务器
 void IOCPModel::StopServer()
 {
+	// setevent 依次关闭工作线程
 	SetEvent(m_hWorkerShutdownEvent);
 	for (int i = 0; i < m_nThreads; i++)
 	{
@@ -315,7 +297,6 @@ DWORD WINAPI IOCPModel::_WorkerThread(LPVOID lpParam)
 			// 心跳包判断是否有客户端断开
 			if ((RecvBytes == 0) && (ioInfo->m_OpType == RECV_POSTED || ioInfo->m_OpType == NULL_POSTED ))
 			{
-				std::cout << "心跳包检测\n";
 				IOCP->ConnectionClosed(socketInfo);
 				IOCP->_DoClose(socketInfo);
 				continue;
@@ -362,7 +343,7 @@ const char* IOCPModel::GetLocalIP()
 }
 const char* IOCPModel::_GetLocalIP()
 {
-	return m_ListenSockInfo->m_Sock.GetLocalIP();
+	return m_lpListenSockInfo->m_Sock.GetLocalIP();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -406,7 +387,7 @@ bool IOCPModel::_HandleError(LPPER_SOCKET_CONTEXT socketInfo, const DWORD&dwErr)
 	}
 	else
 	{
-		this->_ShowMessage("完成端口操作出现错误，线程退出。错误代码：%d", dwErr);
+		this->_ShowMessage("完成端口操作出现错误，线程退出。错误代码:%d", dwErr);
 		return true; //flase
 	}
 }
@@ -416,11 +397,9 @@ bool IOCPModel::_HandleError(LPPER_SOCKET_CONTEXT socketInfo, const DWORD&dwErr)
 // 断开与客户端连接,将内存返回给socket池
 void IOCPModel::_DoClose(LPPER_SOCKET_CONTEXT socektContext)
 {
-	EnterCriticalSection(&m_csLock);
+	CSAutoLock lock(m_csLock);
 
 	m_ServerSocketPool.ReleaseSocketContext(socektContext);
-
-	LeaveCriticalSection(&m_csLock);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -452,7 +431,7 @@ void IOCPModel::_ShowMessage(const char* msg, ...) const
 // 投递I/O请求
 bool IOCPModel::_PostAccept(LPPER_IO_CONTEXT pAcceptioInfo)
 {
-	ASSERT(ioInfo != m_ListenSockInfo.m_sock.socket);
+	ASSERT(ioInfo != m_lpListenSockInfo.m_sock.socket);
 
 	//准备参数
 	// 与accept的区别,为新连接的客户端准备好socket
@@ -467,7 +446,7 @@ bool IOCPModel::_PostAccept(LPPER_IO_CONTEXT pAcceptioInfo)
 
 	// 投递AccpetEX
 	if (FALSE == m_lpfnAcceptEx(
-		m_ListenSockInfo->m_Sock.socket,
+		m_lpListenSockInfo->m_Sock.socket,
 		pAcceptioInfo->m_AcceptSocket,
 		pAcceptioInfo->m_wsaBuf.buf,
 		0,
@@ -524,10 +503,10 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	m_lpfnGetAcceptExSockAddrs(ioInfo->m_wsaBuf.buf, 0, localAddrLen, clientAddrLen, (LPSOCKADDR *)&localAddr, &localAddrLen, (LPSOCKADDR *)&clientAddr, &clientAddrLen);
 
 	// 2. 每一个客户端连入，就为新连接建立一个SocketContext 
-	EnterCriticalSection(&m_csLock);
+	CSAutoLock lock(m_csLock);
 	LPPER_SOCKET_CONTEXT pNewSocketInfo = m_ServerSocketPool.AllocateSocketContext();
 	pNewSocketInfo->m_Sock.socket = ioInfo->m_AcceptSocket;
-	LeaveCriticalSection(&m_csLock);
+	lock.UnLock();
 	if (INVALID_SOCKET == pNewSocketInfo->m_Sock.socket)
 	{
 		_DoClose(pNewSocketInfo);
@@ -548,11 +527,11 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	}
 
 	// 4. 为这个客户端建立一个NewIoContext,并投递一个RECV
-	EnterCriticalSection(&m_csLock);
+	lock.Lock();
 	LPPER_IO_CONTEXT pNewIoContext = pNewSocketInfo->GetNewIOContext();
 	pNewIoContext->m_OpType = RECV_POSTED;
 	pNewIoContext->m_AcceptSocket = pNewSocketInfo->m_Sock.socket;
-	LeaveCriticalSection(&m_csLock);
+	lock.UnLock();
 	if (false == this->_PostRecv(pNewSocketInfo, pNewIoContext))
 	{
 		_DoClose(pNewSocketInfo);
@@ -564,7 +543,7 @@ bool IOCPModel::_DoAccept(LPPER_IO_CONTEXT ioInfo)
 	ioInfo->Reset();
 	if (false == this->_PostAccept(ioInfo))
 	{
-		m_ListenSockInfo->RemoveIOContext(ioInfo);
+		m_lpListenSockInfo->RemoveIOContext(ioInfo);
 	}
 
 	// 设置tcp_keepalive

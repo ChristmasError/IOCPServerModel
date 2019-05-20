@@ -28,7 +28,7 @@ public:
 	bool		SetBlock(bool isblock);
 	const char*       GetLocalIP();
 
-	int					socket;
+	SOCKET				socket;
 	SOCKADDR_IN         addr;
 	const char*			ip;
 	unsigned short		port;

@@ -17,7 +17,7 @@ typedef struct _PER_IO_CONTEXT
 public:
 	WSAOVERLAPPED	m_Overlapped;					// OVERLAPPED结构，该结构里边有一个event事件对象,必须放在结构体首位，作为首地址
 	SOCKET			m_AcceptSocket;					// 此IO操作对应的socket
-	WSABUF			m_wsaBuf;						// WSABUF结构，包含成员：一个指针指向buf，和一个buf的长度len
+	WSABUF			m_wsaBuf;						// WSABUF结构，包含成员:一个指针指向buf，和一个buf的长度len
 	char			m_buffer[BUF_SIZE];			    // WSABUF具体字符缓冲区
 	OPERATION_TYPE  m_OpType;						// 标志位
 

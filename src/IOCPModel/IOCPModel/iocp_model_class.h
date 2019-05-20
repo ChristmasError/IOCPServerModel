@@ -4,7 +4,7 @@
 #include "per_io_context_struct.h"
 #include "per_socket_context_struct.h"
 #include "socket_context_pool_class.h"
-//#include "cs_auto_lock_class.h"
+#include "cs_auto_lock_class.h"
 
 #include<MSWSock.h>
 
@@ -13,22 +13,22 @@
 #define RUNNING true
 #define STOP    false
 
-// 释放指针
-inline void RELEASE_POINT(void* point)
-{
-	if (point != NULL)
-	{
-		delete point;
-		point = NULL;
-	}
-}
 // 释放句柄
 inline void RELEASE_HANDLE(HANDLE handle)
 {
 	if (handle != NULL && handle != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(handle);
-		handle = NULL;
+		handle = INVALID_HANDLE_VALUE;
+	}
+}
+// 释放指针
+inline void RELEASE(void* point)
+{
+	if (point != NULL)
+	{
+		delete point;
+		point = NULL;
 	}
 }
 
@@ -77,9 +77,6 @@ public:
 	virtual void SendCompleted(LPPER_SOCKET_CONTEXT socketInfo, LPPER_IO_CONTEXT ioInfo) = 0;
 
 private:
-	// 开启服务器
-	bool _Start();
-
 	// 初始化服务器资源
 	// 1.初始化Winsock服务
 	// 2.初始化IOCP + 工作函数线程池
@@ -143,18 +140,18 @@ protected:
 
 	HANDLE					      m_hWorkerShutdownEvent;		// 通知线程系统推出事件
 
-	HANDLE						  *m_phWorkerThreadArray;       // 工作线程的句柄指针
+	HANDLE						  *m_phWorkerThreadArray;       // 工作线程数组的句柄指针
 
-	LPPER_SOCKET_CONTEXT          m_ListenSockInfo;				// 服务器ListenContext
+	LPPER_SOCKET_CONTEXT          m_lpListenSockInfo;			// 服务器ListenContext
 
 	LPFN_ACCEPTEX				  m_lpfnAcceptEx;				// AcceptEx函数指针
 
 	LPFN_GETACCEPTEXSOCKADDRS	  m_lpfnGetAcceptExSockAddrs;	// GetAcceptExSockAddrs()函数指针
 
-	int							  m_nThreads;				    // 工作线程数量
+	unsigned int				  m_nThreads;				    // 工作线程数量
 
 	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
 
-	CRITICAL_SECTION m_csLock;
+	CSLock					      m_csLock;						// 临界区锁
 };
 

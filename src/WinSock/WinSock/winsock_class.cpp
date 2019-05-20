@@ -10,6 +10,17 @@ WinSock::WinSock()
 	ip = NULL;
 	port = 0;
 } 
+
+WinSock::~WinSock()
+{
+	if (socket != INVALID_SOCKET)
+	{
+		closesocket(socket);
+		socket = INVALID_SOCKET;
+	}
+	//if(ip!=NULL)
+	//	delete[] ip;
+}
 /////////////////////////////////////////////////////////////////
 // 加载&卸载WinSocket库
 bool WinSock::LoadSocketLib()
@@ -176,16 +187,7 @@ void WinSock::Close()
 	std::cout << "连接关闭! \n";
 	closesocket(socket);
 }
-WinSock::~WinSock()
-{
-	if (socket != INVALID_SOCKET)
-	{
-		closesocket(socket);
-		socket = INVALID_SOCKET;
-	}
-	//if(ip!=NULL)
-	//	delete[] ip;
-}
+
 /////////////////////////////////////////////////////////////////
 // private:
 void WinSock::_ShowMessage(const char* msg, ...) const
