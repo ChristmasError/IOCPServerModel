@@ -1,4 +1,4 @@
 ﻿  iocp_model_class.cpp
-d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(227): warning C4018: “<”: 有符号/无符号不匹配
-d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(247): warning C4018: “<”: 有符号/无符号不匹配
+d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(244): warning C4018: “<”: 有符号/无符号不匹配
+d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(264): warning C4018: “<”: 有符号/无符号不匹配
   IOCPModel.vcxproj -> D:\Github local repository\IOCPModel\src\IOCPModel\IOCPModel\..\..\..\lib\IOCPModel.lib

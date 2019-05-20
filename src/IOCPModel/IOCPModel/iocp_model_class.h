@@ -4,7 +4,7 @@
 #include "per_io_context_struct.h"
 #include "per_socket_context_struct.h"
 #include "socket_context_pool_class.h"
-#include "cs_auto_lock_class.h"
+//#include "cs_auto_lock_class.h"
 
 #include<MSWSock.h>
 
@@ -14,23 +14,10 @@
 #define STOP    false
 
 // 释放句柄
-inline void RELEASE_HANDLE(HANDLE handle)
-{
-	if (handle != NULL && handle != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(handle);
-		handle = INVALID_HANDLE_VALUE;
-	}
-}
+#define RELEASE_HANDLE(x) { if(x!=NULL && x!=INVALID_HANDLE_VALUE){ CloseHandle(x);x=INVALID_HANDLE_VALUE;}}
 // 释放指针
-inline void RELEASE(void* point)
-{
-	if (point != NULL)
-	{
-		delete point;
-		point = NULL;
-	}
-}
+#define RELEASE(x) { if(x!=NULL){delete x;x = NULL;}}
+
 
 //====================================================================================
 //
@@ -89,7 +76,7 @@ private:
 	bool _InitializeIOCP();
 
 	// 释放服务器资源
-	void _Deinitialize();
+	void _DeinitializeServerResource();
 
 	// 卸载Socket库
 	bool _UnloadSocketLib()
@@ -152,6 +139,7 @@ protected:
 
 	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
 
-	CSLock					      m_csLock;						// 临界区锁
+	//CSLock					      m_csLock;						// 临界区锁
+	CRITICAL_SECTION              m_csLock;
 };
 
