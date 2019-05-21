@@ -5,7 +5,7 @@
 SocketContextPool::SocketContextPool()
 {
 	nConnectionSocket = 0;
-	std::cout << "SocketContertPool 初始化完成!\n";
+	std::cout << "SocketContertPool初始化完成...\n";
 }
 
 SocketContextPool::~SocketContextPool()
@@ -15,7 +15,7 @@ SocketContextPool::~SocketContextPool()
 
 LPPER_SOCKET_CONTEXT SocketContextPool::AllocateSocketContext()
 {
-
+	CSAutoLock lock(m_csLock);
 	LPPER_SOCKET_CONTEXT psocket = SocketPool.newElement();
 	nConnectionSocket++;
 	

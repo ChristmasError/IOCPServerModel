@@ -13,6 +13,8 @@ class IOContextPool
 {
 private:
 	std::list<LPPER_IO_CONTEXT> contextList;
+	unsigned int   m_nFreeIoContext;
+	unsigned int   m_nActiveIoContext;
 	CSLock     m_csLock;
 public:
 	IOContextPool();
@@ -24,6 +26,7 @@ public:
 	// 回收一个IOContxt
 	void ReleaseIOContext(LPPER_IO_CONTEXT pContext);
 
+	void ShowIOContextPoolInfo();
 };
 
 

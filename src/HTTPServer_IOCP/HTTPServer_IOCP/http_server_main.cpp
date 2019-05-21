@@ -106,8 +106,12 @@ int main()
 {
 	HTTPServer IOCPserver;
 
-	IOCPserver.StartServer();
-	//IOCPserver.StopServer();
+	if (IOCPserver.StartServer())
+	{
+		cout << "=======================================\n================·þÎñÆ÷¿ªÆô=================\n=======================================\n";
+	}
 
+	//IOCPserver.StopServer();
+	while (1);
 	return 0;
 }

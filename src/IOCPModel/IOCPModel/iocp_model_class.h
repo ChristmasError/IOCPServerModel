@@ -4,7 +4,6 @@
 #include "per_io_context_struct.h"
 #include "per_socket_context_struct.h"
 #include "socket_context_pool_class.h"
-//#include "cs_auto_lock_class.h"
 
 #include<MSWSock.h>
 
@@ -14,9 +13,9 @@
 #define STOP    false
 
 // 释放句柄
-#define RELEASE_HANDLE(x) { if(x!=NULL && x!=INVALID_HANDLE_VALUE){ CloseHandle(x);x=INVALID_HANDLE_VALUE;}}
+#define RELEASE_HANDLE(x) {if(x!=NULL && x!=INVALID_HANDLE_VALUE){ CloseHandle(x);x=INVALID_HANDLE_VALUE;}}
 // 释放指针
-#define RELEASE(x) { if(x!=NULL){delete x;x = NULL;}}
+#define RELEASE(x)	{if(x != NULL) {delete x; x = NULL;}}
 
 
 //====================================================================================
@@ -67,7 +66,7 @@ private:
 	// 初始化服务器资源
 	// 1.初始化Winsock服务
 	// 2.初始化IOCP + 工作函数线程池
-	bool _InitializeServerResource();
+	bool _InitializeResource();
 
 	// 1.加载Winsock库:private
 	bool _LoadSocketLib();
@@ -76,7 +75,10 @@ private:
 	bool _InitializeIOCP();
 
 	// 释放服务器资源
-	void _DeinitializeServerResource();
+	void _DeinitializeResource();
+
+	// 关闭所有工作线程
+	void _CloseWorkerThreads();
 
 	// 卸载Socket库
 	bool _UnloadSocketLib()
@@ -139,7 +141,8 @@ protected:
 
 	static SocketContextPool      m_ServerSocketPool;			// 连入客户端的内存池
 
-	//CSLock					      m_csLock;						// 临界区锁
-	CRITICAL_SECTION              m_csLock;
+	//CSLock					      m_csLock;				
+	
+	CRITICAL_SECTION              m_csLock;						// 临界区锁
 };
 

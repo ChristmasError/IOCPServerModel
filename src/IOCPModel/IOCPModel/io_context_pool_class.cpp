@@ -4,19 +4,21 @@
 #include <iostream>
 
 // IOContextPool中的初始数量
-#define INIT_IOCONTEXT_NUM (100)
+#define INIT_IOCONTEXTPOOL_NUM (500)
 
 IOContextPool::IOContextPool()
 {
 	contextList.clear();
+	m_nFreeIoContext = INIT_IOCONTEXTPOOL_NUM;
+	m_nActiveIoContext = 0;
 	CSAutoLock lock(m_csLock);
-	for (size_t i = 0; i < INIT_IOCONTEXT_NUM; i++)
+	for (size_t i = 0; i < INIT_IOCONTEXTPOOL_NUM; i++)
 	{
 		LPPER_IO_CONTEXT context = new PER_IO_CONTEXT;
 		contextList.push_back(context);
 	}
 
-	std::cout << "IOContextPool 初始化完成\n";
+	std::cout << "IOContextPool初始化完成...\n";
 }
 
 IOContextPool::~IOContextPool()
@@ -45,6 +47,8 @@ LPPER_IO_CONTEXT IOContextPool::AllocateIoContext()
 	{
 		context = new PER_IO_CONTEXT;
 	}
+	m_nActiveIoContext++;
+	m_nFreeIoContext--;
 	return context;
 }
 
@@ -53,4 +57,11 @@ void IOContextPool::ReleaseIOContext(LPPER_IO_CONTEXT pIOContext)
 	pIOContext->Reset();
 	CSAutoLock lock(m_csLock);
 	this->contextList.push_front(pIOContext);
+	m_nActiveIoContext--;
+	m_nFreeIoContext++;
+}
+
+void IOContextPool::ShowIOContextPoolInfo()
+{
+	printf("IoContextPool Info: number of ActiveIoContext:%d,number of FreeIoContext:%d\n",m_nActiveIoContext,m_nFreeIoContext);
 }
