@@ -1,5 +1,4 @@
-﻿  io_context_pool_class.cpp
-  iocp_model_class.cpp
+﻿  iocp_model_class.cpp
 d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(234): warning C4018: “<”: 有符号/无符号不匹配
 d:\github local repository\iocpmodel\src\iocpmodel\iocpmodel\iocp_model_class.cpp(249): warning C4018: “<”: 有符号/无符号不匹配
   socket_context_pool.cpp

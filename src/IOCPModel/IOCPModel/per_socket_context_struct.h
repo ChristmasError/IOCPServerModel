@@ -34,9 +34,9 @@ public:
 		{
 			ioContextPool.ReleaseIOContext(*it);
 		}
-		EnterCriticalSection(&m_csLock);;
+		EnterCriticalSection(&m_csLock);
 		arrIoContext.clear();
-		LeaveCriticalSection(&m_csLock);;
+		LeaveCriticalSection(&m_csLock);
 
 		DeleteCriticalSection(&m_csLock);
 	}
