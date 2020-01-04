@@ -1,12 +1,1 @@
-﻿  iocp_model_class.cpp
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\IOCPModel\IOCPModel\iocp_model_class.cpp(234,20): warning C4018:  “<”: 有符号/无符号不匹配
-  io_context_pool_class.cpp
-  socket_context_pool.cpp
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\IOCPModel\IOCPModel\iocp_model_class.cpp(249,21): warning C4018:  “<”: 有符号/无符号不匹配
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.h(44,1): warning C4624:  “MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_”: 已将析构函数隐式定义为“已删除”
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(30): message :  查看对正在编译的 类 模板 实例化“MemoryPool<_PER_SOCKET_CONTEXT,102400>::Slot_”的引用
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(26): message :  在编译 类 模板 成员函数“MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept”时
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\IOCPModel\IOCPModel\socket_context_pool.cpp(6): message :  查看对正在编译的函数 模板 实例化“MemoryPool<_PER_SOCKET_CONTEXT,102400>::~MemoryPool(void) noexcept”的引用
-  正在生成代码...
-C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\IOCPModel\IOCPModel\socket_context_pool_class.h(17): message :  查看对正在编译的 类 模板 实例化“MemoryPool<_PER_SOCKET_CONTEXT,102400>”的引用
-  IOCPModel.vcxproj -> C:\Users\Christmas\Desktop\GitHub local repository\IOCPModel\src\IOCPModel\IOCPModel\..\..\..\lib\IOCPModel.lib
+﻿  IOCPModel.vcxproj -> C:\Users\Christmas\Desktop\IOCPModel\src\IOCPModel\IOCPModel\..\..\..\lib\IOCPModel.lib

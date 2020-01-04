@@ -11,6 +11,5 @@ typedef enum _OPERATION_TYPE
 	RECV_POSTED,		// 标志投递的是接收操作
 	SEND_POSTED,		// 标志投递的是发送操作
 	NULL_POSTED			// 初始化用
-
 } OPERATION_TYPE;
 

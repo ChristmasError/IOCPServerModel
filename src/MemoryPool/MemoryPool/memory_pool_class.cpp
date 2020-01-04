@@ -1,7 +1,7 @@
 #pragma once 
 
 #include "memory_pool_class.h"
-
+#include <iostream>
 template<typename T, size_t Blocksize>
 inline typename MemoryPool<T, Blocksize>::size_type 
 MemoryPool<T, Blocksize>::padPointer(data_pointer_ p, size_type align) const noexcept
