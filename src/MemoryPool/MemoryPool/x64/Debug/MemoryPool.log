@@ -1,7 +1,0 @@
-﻿  memory_pool_class.cpp
-C:\Users\Christmas\Desktop\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(119,17): error C2039: “forward”: 不是“std”的成员
-D:\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\cstddef(22): message : 参见“std”的声明
-C:\Users\Christmas\Desktop\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(119,17): message : 此诊断出现在编译器生成的函数“void MemoryPool<T,Blocksize>::construct(U *,Args &&...)”中
-C:\Users\Christmas\Desktop\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(141,39): error C2039: “forward”: 不是“std”的成员
-D:\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\cstddef(22): message : 参见“std”的声明
-C:\Users\Christmas\Desktop\IOCPModel\src\MemoryPool\MemoryPool\memory_pool_class.cpp(141,39): message : 此诊断出现在编译器生成的函数“T *MemoryPool<T,Blocksize>::newElement(Args &&...)”中

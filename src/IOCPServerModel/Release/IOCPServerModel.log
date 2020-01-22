@@ -1,0 +1,16 @@
+﻿D:\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(445,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  IOCPServerModel.cpp
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\IOContextPool.h(16,41): warning C4251: “IOContextPool::contextList”: class“std::list<LPPER_IO_CONTEXT,std::allocator<LPPER_IO_CONTEXT>>”需要有 dll 接口由 class“IOContextPool”的客户端使用
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\IOContextPool.h(16): message : 参见“std::list<LPPER_IO_CONTEXT,std::allocator<LPPER_IO_CONTEXT>>”的声明
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\PerSocketContext.h(21,45): warning C4251: “_PER_SOCKET_CONTEXT::arrIoContext”: class“std::vector<LPPER_IO_CONTEXT,std::allocator<LPPER_IO_CONTEXT>>”需要有 dll 接口由 class“_PER_SOCKET_CONTEXT”的客户端使用
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\PerSocketContext.h(21): message : 参见“std::vector<LPPER_IO_CONTEXT,std::allocator<LPPER_IO_CONTEXT>>”的声明
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\SocketContextPool.h(16,52): warning C4251: “SocketContextPool::SocketPool”: class“MemoryPool<_PER_SOCKET_CONTEXT,102400>”需要有 dll 接口由 class“SocketContextPool”的客户端使用
+C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\SocketContextPool.h(16): message : 参见“MemoryPool<_PER_SOCKET_CONTEXT,102400>”的声明
+C:\Users\Christmas\Desktop\IOCPServerModel\src\IOCPServerModel\IOCPServerModel.cpp(233,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Christmas\Desktop\IOCPServerModel\src\IOCPServerModel\IOCPServerModel.cpp(248,21): warning C4018: “<”: 有符号/无符号不匹配
+    正在创建库 ../../bin/release\IOCPSERVERMODEL.lib 和对象 ../../bin/release\IOCPSERVERMODEL.exp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 37 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  IOCPServerModel.vcxproj -> C:\Users\Christmas\Desktop\IOCPServerModel\src\IOCPServerModel\../../bin/release\IOCPSERVERMODEL.dll

@@ -1,0 +1,7 @@
+﻿D:\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(445,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+    正在创建库 ../../bin/release\SERVERDATASTRUCTURE.lib 和对象 ../../bin/release\SERVERDATASTRUCTURE.exp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 260 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  ServerDataStructure.vcxproj -> C:\Users\Christmas\Desktop\IOCPServerModel\src\ServerDataStructure\../../bin/release\SERVERDATASTRUCTURE.dll

@@ -1,1 +1,3 @@
-﻿  CSAutoLock.vcxproj -> C:\Users\Christmas\Desktop\IOCPModel\src\CSAutoLock\..\..\lib\CSAutoLock.lib
+﻿D:\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(445,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+    正在创建库 ../../bin/debug\CSAutoLockd.lib 和对象 ../../bin/debug\CSAutoLockd.exp
+  CSAutoLock.vcxproj -> C:\Users\Christmas\Desktop\IOCPServerModel\src\CSAutoLock\../../bin/debug\CSAutoLockd.dll

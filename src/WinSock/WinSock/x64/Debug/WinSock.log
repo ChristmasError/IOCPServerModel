@@ -1,6 +1,0 @@
-﻿  winsock_class.cpp
-C:\Users\Christmas\Desktop\IOCPModel\src\WinSock\WinSock\winsock_class.cpp(70,9): warning C4244: “return”: 从“SOCKET”转换到“int”，可能丢失数据
-C:\Users\Christmas\Desktop\IOCPModel\src\WinSock\WinSock\winsock_class.cpp(79,9): warning C4244: “return”: 从“SOCKET”转换到“int”，可能丢失数据
-C:\Users\Christmas\Desktop\IOCPModel\src\WinSock\WinSock\winsock_class.cpp(109,17): warning C4244: “初始化”: 从“SOCKET”转换到“int”，可能丢失数据
-C:\Users\Christmas\Desktop\IOCPModel\src\WinSock\WinSock\winsock_class.cpp(172,21): warning C4244: “参数”: 从“SOCKET”转换到“int”，可能丢失数据
-LINK : fatal error LNK1561: 必须定义入口点

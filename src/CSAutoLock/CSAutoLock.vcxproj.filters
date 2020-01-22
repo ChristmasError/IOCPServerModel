@@ -15,15 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cs_auto_lock_class.h">
+    <ClInclude Include="csautolock_global.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSAutoLock.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="critical_section_auto_lock_class.cpp">
+    <ClCompile Include="CriticalSectionAutoLock.cpp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="critical_section_lock_class.cpp">
+    <ClCompile Include="CriticalSectionLock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
