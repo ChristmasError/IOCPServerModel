@@ -1,4 +1,4 @@
-# IOCPModel
+# IOCPServerModel
 一个基于完成端口的设计的IOCPServerModel服务器基类：
 WinSock项目将windows socket库部分库函数进行封装，方便在IOCPModel中管理socket.  
 PER_IO_CONTEXT结构体封装了用于每一个重叠操作所需的参数.   
